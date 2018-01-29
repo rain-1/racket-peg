@@ -1,23 +1,10 @@
 #lang racket
 
 (require (for-syntax racket/syntax))
-(require (for-syntax racket/match))
 
-(define-syntax-rule (pop! place)
-  (let ((top (car (unbox place))))
-    (set-box! place (cdr (unbox place)))
-    top))
 
-(define-syntax-rule (push! place thing)
-  (set-box! place (cons thing (unbox place))))
-
-(define peg:string (make-parameter #f))
-(define peg:sp (make-parameter #f))
-(define peg:fail-stack (make-parameter #f))
-(define (peg:eof?) (= (unbox (peg:sp)) (- (string-length (peg:string)) 0)))
-
-(define (peg:string@)
-  (string-ref (peg:string) (unbox (peg:sp))))
+;;;;
+;; generic utility functions
 
 (define (inc! b n)
   (set-box! b (+ (unbox b) n)))
@@ -32,13 +19,47 @@
 (define (string-contains-char? str ch)
   (string-contains? str (char->string ch)))
 
+(define (empty-string? s) (and (string? s) (string=? "" s)))
+
+
+;;;;
+;; push and pop for boxes
+
+(define-syntax-rule (push! place thing)
+  (set-box! place (cons thing (unbox place))))
+
+(define-syntax-rule (pop! place)
+  (let ((top (car (unbox place))))
+    (set-box! place (cdr (unbox place)))
+    top))
+
+
+;;;;
+;; peg system registers
+;; and convenience functions
+
+(define peg:string (make-parameter #f))
+(define peg:sp (make-parameter #f))
+(define peg:fail-stack (make-parameter #f))
+
+(define (peg:eof?) (= (unbox (peg:sp)) (- (string-length (peg:string)) 0)))
+
+(define (peg:string@)
+  (string-ref (peg:string) (unbox (peg:sp))))
+
 (define (peg:join x y)
-  (cond ((and (string? x) (string? y)) (string-append x y))
+  (cond ((empty-string? x) y)
+        ((empty-string? y) x)
+        ((and (string? x) (string? y)) (string-append x y))
         ((and (list? x) (list? y)) (append x y))
         (else (list x y))))
 
+
+;;;;
+;; peg compiler macro
+
 (define-for-syntax (peg:names exp)
-  (syntax-case exp (epsilon char string range seq choice star optional plus call name)
+  (syntax-case exp (epsilon char any-char string range seq choice star optional plus call name not)
     [(seq e1 e2) (append (peg:names #'e1) (peg:names #'e2))]
     [(choice e1 e2) (append (peg:names #'e1) (peg:names #'e2))]
     [(star e1) (peg:names #'e1)]
@@ -51,7 +72,7 @@
 
 (define-for-syntax (peg:compile exp sk)
   (with-syntax ([sk sk])
-    (syntax-case exp (epsilon char string range seq choice star optional plus call name)
+    (syntax-case exp (epsilon char any-char string range seq choice star optional plus call name not)
 
       [(epsilon)
        #'(sk "")]
@@ -59,6 +80,13 @@
       [(char c)
        #'(if (and (not (peg:eof?)) (char=? c (peg:string@)))
              (begin
+               (inc! (peg:sp) 1)
+               (sk (char->string c)))
+             ((pop! (peg:fail-stack))))]
+      
+      [(any-char)
+       #'(if (not (peg:eof?))
+             (let ((c (peg:string@)))
                (inc! (peg:sp) 1)
                (sk (char->string c)))
              ((pop! (peg:fail-stack))))]
@@ -88,24 +116,29 @@
            #,(peg:compile #'e1 #'mk))]
       
       [(choice e1 e2)
-       #`(let ((k1 (lambda () #,(peg:compile #'e1 #'sk)))
-               (k2 (lambda () #,(peg:compile #'e2 #'sk))))
-           (push! (peg:fail-stack) k2)
-           (k1))]
+       #`(let ((alt (lambda (stash-sp)
+                      (lambda ()
+                        (set-box! (peg:sp) stash-sp)
+                        #,(peg:compile #'e2 #'sk)))))
+           (push! (peg:fail-stack) (alt (unbox (peg:sp))))
+           #,(peg:compile #'e1 #'sk))]
 
       [(star e)
        #`(letrec ((k* (lambda (res)
-                        (push! (peg:fail-stack) (lambda () (sk res)))
+                        (push! (peg:fail-stack) (lambda () (sk (reverse res))))
                         (let ((k-next (lambda (r1)
-                                        (k* (peg:join res r1)))))
+                                        (k* (cons r1 res)))))
                           #,(peg:compile #'e #'k-next)))))
-           (k* ""))]
+           (k* '()))]
 
       [(optional e)
        (peg:compile #'(choice e (epsilon)) #'sk)]
       
       [(plus e)
-       (peg:compile #'(seq e (star e)) #'sk)]
+       #`(let ((sk-cons (lambda (res)
+                          (sk (cons (car res)
+                                    (cadr res))))))
+           #,(peg:compile #'(seq e (star e)) #'sk-cons))]
       
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)])
@@ -116,19 +149,47 @@
                       (set! nm res)
                       (sk res))))
            #,(peg:compile #'subexp #'sk!))]
+
+      [(not exp)
+       ;; if exp fails to parse restore the fail stack and succeed
+       ;; if exp succeeds at parsing, restore the fail stack and fail
+     ;; TODO: names should not be bound when inside a not
+       #`(let ((stash:stack (unbox (peg:fail-stack)))
+               (stash:sp (unbox (peg:sp))))
+           (set-box! (peg:fail-stack)
+                     (list (lambda ()
+                             (set-box! (peg:fail-stack) stash:stack)
+                             (set-box! (peg:sp) stash:sp)
+                             (sk ""))))
+           (let ((fk (lambda (_)
+                       (set-box! (peg:fail-stack) stash:stack)
+                       (set-box! (peg:sp) stash:sp)
+                       ((pop! (peg:fail-stack))))))
+             #,(peg:compile #'exp #'fk)))]
+;      [(not exp) ;; doesnt work
+;       ;; if exp fails to parse restore the fail stack and succeed
+;       ;; if exp succeeds at parsing, restore the fail stack and fail
+;       #`(let ((stash-sp (unbox (peg:sp))))
+;           (push! (peg:fail-stack)
+;                  (lambda ()
+ ;                   (set-box! (peg:sp) stash-sp)
+ ;                   (sk "")))
+ ;          (let ((fk (lambda (_)
+ ;                      (pop! (peg:fail-stack))
+ ;                      ((pop! (peg:fail-stack))))))
+ ;            #,(peg:compile #'exp #'fk)))]
       
       [else (raise-syntax-error "invalid peg" (syntax->datum exp))])))
 
 (define-syntax (define-peg stx)
   (syntax-case stx (name)
-    [(_ rule-name exp)
-     #'(define-peg rule-name (name res exp) res)]
+    [(_ rule-name exp) #'(define-peg rule-name (name res exp) res)]
     [(_ rule-name exp action)
      (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)]
                    [body (peg:compile #'exp #'sk^)]
                    [nms (map (lambda (nm) #`(#,nm #f)) (peg:names #'exp))])
        #'(define (name sk)
-           (let nms
+           (let* nms ;; let* means we don't need to remove duplicates
              (let ((sk^ (lambda (_) (sk action))))
                body))))]))
 
@@ -142,16 +203,22 @@
                         [peg:fail-stack (box (list (lambda () err)))])
            (name (lambda (res)
                    (display "success! ")
-                   (display res)
+                   (write res)
                    (newline)))))]))
+
+
+;;;;
+;; Testing
+
 
 (define-peg digit
   (range "0123456789"))
 (define-peg nonzero-digit
   (range "123456789"))
 (define-peg number
-  (name res (seq (call nonzero-digit) (star (call digit))))
-  (string->number res))
+  (seq (name hd (call nonzero-digit))
+       (name tl (star (call digit))))
+  (string->number (string-append* (cons hd tl))))
 
 (define-peg sum
   (seq (name n1 (call number))
@@ -162,7 +229,7 @@
       n1))
 
 (define-peg sheep
-  (seq (call sh) (seq (call eE2) (char #\p))))
+  (seq (call sh) (seq (call eE2) (string "p!"))))
 (define-peg sh (string "sh"))
 (define-peg eE
   (choice (seq (string "eE")
@@ -172,6 +239,21 @@
   (plus (choice (string "eE")
                 (string "Ee"))))
 
-(peg sheep "sheEeEeEp")
-(peg sum "3000974+53+4-23424")
+(define-peg bracks
+  (choice (seq (char #\()
+               (seq ;(star (char #\x))
+                (name res (star (call bracks)))
+                (char #\))))
+          (name res (call symbl)))
+  res)
+(define-peg symbl
+  (seq (name res (plus (seq (not (char #\())
+                            (seq (not (char #\)))
+                                 (seq (not (char #\space))
+                                      (any-char))))))
+       (star (char #\space)))
+  (string->symbol (string-append* res)))
 
+(peg sheep "sheEeEeEp!")
+(peg sum "3000974+53+4-23424")
+(peg bracks "(foo(y()()())bar (baz 429))")
