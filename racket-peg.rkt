@@ -1,26 +1,5 @@
 #lang racket
-
 (require (for-syntax racket/syntax))
-
-
-;;;;
-;; generic utility functions
-
-(define (inc! b n)
-  (set-box! b (+ (unbox b) n)))
-
-(define (string-contains-substring? str place contained)
-  (and (>= (string-length str) (+ place (string-length contained)))
-       (string=? (substring str place (+ place (string-length contained)))
-                 contained)))
-
-(define (char->string ch) (list->string (list ch)))
-
-(define (string-contains-char? str ch)
-  (string-contains? str (char->string ch)))
-
-(define (empty-string? s) (and (string? s) (string=? "" s)))
-
 
 ;;;;
 ;; push and pop for boxes
@@ -35,225 +14,324 @@
 
 
 ;;;;
-;; peg system registers
-;; and convenience functions
+;; generic utility functions
 
-(define peg:string (make-parameter #f))
-(define peg:sp (make-parameter #f))
-(define peg:fail-stack (make-parameter #f))
-
-(define (peg:eof?) (= (unbox (peg:sp)) (- (string-length (peg:string)) 0)))
-
-(define (peg:string@)
-  (string-ref (peg:string) (unbox (peg:sp))))
-
-(define (peg:join x y)
-  (cond ((empty-string? x) y)
-        ((empty-string? y) x)
-        ((and (string? x) (string? y)) (string-append x y))
-        ((and (list? x) (list? y)) (append x y))
-        (else (list x y))))
+(define (char->string ch) (list->string (list ch)))
+(define (string-contains-char? str ch) (string-contains? str (char->string ch)))
+(define (string-contains-substring? str place contained)
+  (and (>= (string-length str) (+ place (string-length contained)))
+       (string=? (substring str place (+ place (string-length contained)))
+                 contained)))
 
 
 ;;;;
-;; peg compiler macro
+;; sequences
 
-(define-for-syntax (peg:names exp)
-  (syntax-case exp (epsilon char any-char string range seq choice star optional plus call name not)
-    [(seq e1 e2) (append (peg:names #'e1) (peg:names #'e2))]
-    [(choice e1 e2) (append (peg:names #'e1) (peg:names #'e2))]
-    [(star e1) (peg:names #'e1)]
-    [(optional e1) (peg:names #'e1)]
-    [(plus e1) (peg:names #'e1)]
-    
-    [(name nm subexp) (cons #'nm (peg:names #'subexp))]
+;; a peg parse result will be;
+;; - a peg-result string
+;; - a sequence of peg parse results
+;; - a user specified scheme object
 
+;; peg-result strings are joined
+;; sequences are concatenated
+;; scheme objects are put into sequences
+
+;; joining a peg-result string with a sequence that starts with a peg result should join the string!
+;; we need to be really careful about empty sequences not obstructing us from seeing a peg-result string
+
+;; this is horrible
+
+(struct seq-elt (object) #:transparent)
+(struct seq-cat (subseqs) #:transparent)
+(define (seq? x) (or (seq-elt? x) (seq-cat? x)))
+
+(define empty-sequence (seq-cat '()))
+(define (empty-sequence? x)
+  ;; *** you could cat multiple empty sequences together but that is not
+  ;; what this function cares about
+  (and (seq-cat? x) (null? (seq-cat-subseqs x))))
+
+(define (seq->dlist seq tail)
+  (cond ((seq-elt? seq) (cons (seq-elt-object seq) tail))
+	((seq-cat? seq) (foldr seq->dlist tail (seq-cat-subseqs seq)))
+	(else (error "seq->dlist failed" seq))))
+(define (seq->list seq) (seq->dlist seq '()))
+
+(struct peg-result (str) #:transparent)
+
+(define (peg-result->object x)
+  (cond ((peg-result? x) (peg-result-str x))
+        ((seq? x)
+         (cat-peg-results (seq->list x) #t))
+        (else x)))
+
+(define (peg-result-join x y)
+  (cond ((empty-sequence? x) y)
+        ((empty-sequence? y) x)
+        ((and (seq? x) (seq? y))
+         (seq-cat (list x y)))
+        ((seq? x)
+         (seq-cat (list x (seq-elt y))))
+        ((seq? y)
+         (seq-cat (list (seq-elt x) y)))
+        (else
+         (seq-cat (list (seq-elt x) (seq-elt y))))))
+
+(define (cat-peg-results lst singletonize?)
+  (cond ((null? lst) lst)
+        ((and (null? (cdr lst)) (peg-result? (car lst)))
+         (if singletonize?
+             (peg-result-str (car lst))
+             (list (peg-result-str (car lst)))))
+        ((null? (cdr lst)) lst)
+        ((and (peg-result? (car lst))
+              (peg-result? (cadr lst)))
+         (cat-peg-results (cons (peg-result (string-append (peg-result-str (car lst))
+                                                           (peg-result-str (cadr lst))))
+                                (cddr lst))
+                          #t))
+        ((peg-result? (car lst))
+         (cons (peg-result-str (car lst)) (cat-peg-results (cdr lst) #f)))
+        (else (cons (car lst) (cat-peg-results (cdr lst) #f)))))
+
+
+;;;;
+;; peg s-exp syntax
+
+;; <peg> ::= (epsilon)
+;;         | (char c)
+;;         | (any-char)
+;;         | (range str)
+;;         | (string str)
+;;         | (seq <peg> <peg>)
+;;         | (choice <peg> <peg>)
+;;         | (star <peg>)
+;;         | (plus <peg>)
+;;         | (optional <peg>)
+;;         | (call nm)
+;;         | (name nm <peg>)
+;;         | (not <peg>)
+
+(define-for-syntax (peg-names exp)
+  (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not)
+    [(seq e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
+    [(choice e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
+    [(star e1) (peg-names #'e1)]
+    [(plus e1) (peg-names #'e1)]
+    [(optional e1) (peg-names #'e1)]
+    [(name nm subexp) (cons #'nm (peg-names #'subexp))]
     [else '()]))
 
-(define-for-syntax (peg:compile exp sk)
+
+;;;;
+;; pegvm registers and dynamic control
+
+(define pegvm-input-text (make-parameter #f))      ;; The input string being parsed
+(define pegvm-input-position (make-parameter #f))  ;; The position inside the string
+(define pegvm-control-stack (make-parameter #f))   ;; For choice control flow
+(define pegvm-stashed-stacks (make-parameter #f))  ;; For negation control flow
+(define pegvm-negation? (make-parameter #f))       ;; How many negations have we entered
+
+(struct control-frame (position label) #:transparent)
+
+(define (pegvm-eof?) (= (string-length (pegvm-input-text)) (unbox (pegvm-input-position))))
+(define (pegvm-peek) (string-ref (pegvm-input-text) (unbox (pegvm-input-position))))
+(define (pegvm-advance! n) (set-box! (pegvm-input-position) (+ (unbox (pegvm-input-position)) n)))
+(define (pegvm-push-alternative! alt) (push! (pegvm-control-stack) (control-frame (unbox (pegvm-input-position)) alt)))
+(define (pegvm-fail)
+  (let ((cf (pop! (pegvm-control-stack))))
+    (when (control-frame-position cf)
+      (set-box! (pegvm-input-position) (control-frame-position cf)))
+    ((control-frame-label cf))))
+(define (pegvm-enter-negation!)
+  (set-box! (pegvm-negation?) (+ (unbox (pegvm-negation?)) 1))
+  (push! (pegvm-stashed-stacks) (unbox (pegvm-control-stack)))
+  (set-box! (pegvm-control-stack) '()))
+(define (pegvm-exit-negation!)
+  (set-box! (pegvm-negation?) (- (unbox (pegvm-negation?)) 1))
+  (set-box! (pegvm-control-stack) (pop! (pegvm-stashed-stacks))))
+
+
+;;;;
+;; peg compiler
+
+(define-for-syntax (peg-compile exp sk)
+  (define (single-char-pred sk x cond)
+    (with-syntax ([sk sk] [x x] [cond cond])
+      #'(if (pegvm-eof?)
+            (pegvm-fail)
+            (let ((x (pegvm-peek)))
+              (if cond
+                  (begin (pegvm-advance! 1)
+                         (sk (peg-result (char->string x))))
+                  (pegvm-fail))))))
   (with-syntax ([sk sk])
-    (syntax-case exp (epsilon char any-char string range seq choice star optional plus call name not)
-
+    (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not)
       [(epsilon)
-       #'(sk "")]
-      
+       #'(sk empty-sequence)]
       [(char c)
-       #'(if (and (not (peg:eof?)) (char=? c (peg:string@)))
-             (begin
-               (inc! (peg:sp) 1)
-               (sk (char->string c)))
-             ((pop! (peg:fail-stack))))]
-      
+       (single-char-pred #'sk #'x #'(char=? c x))]
       [(any-char)
-       #'(if (not (peg:eof?))
-             (let ((c (peg:string@)))
-               (inc! (peg:sp) 1)
-               (sk (char->string c)))
-             ((pop! (peg:fail-stack))))]
-      
+       (single-char-pred #'sk #'x #t)]
       [(range str)
-       #'(if (peg:eof?)
-             ((pop! (peg:fail-stack)))
-             (let ((c (peg:string@)))
-               (if (string-contains-char? str c)
-                   (begin
-                     (inc! (peg:sp) 1)
-                     (sk (char->string c)))
-                   ((pop! (peg:fail-stack))))))]
-      
+       (single-char-pred #'sk #'x #'(string-contains-char? str x))]
       [(string str)
-       (let ((str-len (string-length (syntax->datum #'str))))
-         #`(if (string-contains-substring? (peg:string) (unbox (peg:sp)) str)
-               (begin
-                 (inc! (peg:sp) #,str-len)
-                 (sk str))
-               ((pop! (peg:fail-stack)))))]
-      
+       (with-syntax ([str-len (string-length (syntax->datum #'str))])
+         #'(if (string-contains-substring? (pegvm-input-text) (unbox (pegvm-input-position)) str)
+               (begin (pegvm-advance! str-len)
+                      (sk (peg-result str)))
+               (pegvm-fail)))]
       [(seq e1 e2)
-       #`(let ((mk (lambda (r1)
-                    (let ((sk^ (lambda (r2) (sk (peg:join r1 r2)))))
-                      #,(peg:compile #'e2 #'sk^)))))
-           #,(peg:compile #'e1 #'mk))]
-      
+       (with-syntax ([p1 (peg-compile #'e1 #'mk)]
+                     [p2 (peg-compile #'e2 #'sk^)])
+         #'(let ((mk (lambda (r1)
+                       (let ((sk^ (lambda (r2)
+                                    (sk (peg-result-join r1 r2)))))
+                         p2))))
+             p1))]
+      [(seq e1 e2 e3 ...)
+       (peg-compile #'(seq e1 (seq e2 e3 ...)) #'sk)]
       [(choice e1 e2)
-       #`(let ((alt (lambda (stash-sp)
-                      (lambda ()
-                        (set-box! (peg:sp) stash-sp)
-                        #,(peg:compile #'e2 #'sk)))))
-           (push! (peg:fail-stack) (alt (unbox (peg:sp))))
-           #,(peg:compile #'e1 #'sk))]
-
+       (with-syntax ([p1 (peg-compile #'e1 #'sk)]
+                     [p2 (peg-compile #'e2 #'sk)])
+         #'(begin (pegvm-push-alternative! (lambda () p2))
+                  p1))]
+      [(choice e1 e2 e3 ...)
+       (peg-compile #'(choice e1 (choice e2 e3 ...)) #'sk)]
       [(star e)
-       #`(letrec ((k* (lambda (res)
-                        (push! (peg:fail-stack) (lambda () (sk (reverse res))))
-                        (let ((k-next (lambda (r1)
-                                        (k* (cons r1 res)))))
-                          #,(peg:compile #'e #'k-next)))))
-           (k* '()))]
-
-      [(optional e)
-       (peg:compile #'(choice e (epsilon)) #'sk)]
-      
+       (with-syntax ([p (peg-compile #'e #'s+)])
+         #'(letrec ((s* (lambda (res-acc)
+                          (pegvm-push-alternative! (lambda () (sk res-acc)))
+                          (let ((s+ (lambda (res)
+                                      (s* (peg-result-join res-acc res)))))
+                            p))))
+             (s* empty-sequence)))]
       [(plus e)
-       #`(let ((sk-cons (lambda (res)
-                          (sk (cons (car res)
-                                    (cadr res))))))
-           #,(peg:compile #'(seq e (star e)) #'sk-cons))]
-      
+       (peg-compile #'(seq e (star e)) #'sk)]
+      [(optional e)
+       (with-syntax ([p (peg-compile #'e #'sk)])
+         #'(begin (pegvm-push-alternative! (lambda () (sk empty-sequence)))
+                  p))]
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)])
          #'(rule sk))]
-
-      [(name nm subexp)
-       #`(let ((sk! (lambda (res)
-                      (set! nm res)
-                      (sk res))))
-           #,(peg:compile #'subexp #'sk!))]
-
-      [(not exp)
-       ;; if exp fails to parse restore the fail stack and succeed
-       ;; if exp succeeds at parsing, restore the fail stack and fail
-     ;; TODO: names should not be bound when inside a not
-       #`(let ((stash:stack (unbox (peg:fail-stack)))
-               (stash:sp (unbox (peg:sp))))
-           (set-box! (peg:fail-stack)
-                     (list (lambda ()
-                             (set-box! (peg:fail-stack) stash:stack)
-                             (set-box! (peg:sp) stash:sp)
-                             (sk ""))))
-           (let ((fk (lambda (_)
-                       (set-box! (peg:fail-stack) stash:stack)
-                       (set-box! (peg:sp) stash:sp)
-                       ((pop! (peg:fail-stack))))))
-             #,(peg:compile #'exp #'fk)))]
-;      [(not exp) ;; doesnt work
-;       ;; if exp fails to parse restore the fail stack and succeed
-;       ;; if exp succeeds at parsing, restore the fail stack and fail
-;       #`(let ((stash-sp (unbox (peg:sp))))
-;           (push! (peg:fail-stack)
-;                  (lambda ()
- ;                   (set-box! (peg:sp) stash-sp)
- ;                   (sk "")))
- ;          (let ((fk (lambda (_)
- ;                      (pop! (peg:fail-stack))
- ;                      ((pop! (peg:fail-stack))))))
- ;            #,(peg:compile #'exp #'fk)))]
-      
-      [else (raise-syntax-error "invalid peg" (syntax->datum exp))])))
+      [(name nm e)
+       (with-syntax ([p (peg-compile #'e #'sk^)])
+         #'(let ((sk^ (lambda (r)
+                        (when (= 0 (unbox (pegvm-negation?)))
+                          (set! nm (peg-result->object r)))
+                        (sk r))))
+             p))]
+      [(not e)
+       (with-syntax ([p (peg-compile #'e #'sk^)])
+         #'(let ((sk^ (lambda (_)
+                        (pegvm-exit-negation!)
+                        (pegvm-fail)))
+                 (fk (lambda ()
+                       (pegvm-exit-negation!)
+                       (sk empty-sequence))))
+             (pegvm-enter-negation!)
+             (pegvm-push-alternative! fk)
+             p))]
+      [_ (let ((shorthand (syntax-e exp)))
+           (cond ((char? shorthand) (peg-compile #`(char #,exp) #'sk))
+                 ((string? shorthand) (peg-compile #`(string #,exp) #'sk))
+                 ((symbol? shorthand) (peg-compile #`(call #,exp) #'sk))
+                 (else (raise-syntax-error "invalid peg" (syntax->datum exp)))))])))
 
 (define-syntax (define-peg stx)
-  (syntax-case stx (name)
-    [(_ rule-name exp) #'(define-peg rule-name (name res exp) res)]
+  (define (make-binding nm)
+    (with-syntax ([nm nm]) #'(nm #f)))
+  (syntax-case stx ()
+    [(_ rule-name exp)
+     #'(define-peg rule-name exp #f)]
     [(_ rule-name exp action)
      (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)]
-                   [body (peg:compile #'exp #'sk^)]
-                   [nms (map (lambda (nm) #`(#,nm #f)) (peg:names #'exp))])
+                   [bindings (map make-binding (peg-names #'exp))]
+                   [body (peg-compile #'exp #'sk^)]
+                   [action (if (syntax-e #'action) #'action #'res)])
        #'(define (name sk)
-           (let* nms ;; let* means we don't need to remove duplicates
-             (let ((sk^ (lambda (_) (sk action))))
+           (let* bindings
+             (let ((sk^ (lambda (res) (sk action))))
                body))))]))
 
 (define-syntax (peg stx)
   (syntax-case stx ()
     [(_ rule-name str)
-     (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)]
-                   [err #'(error "parse failed at location" (unbox (peg:sp)))])
-       #'(parameterize ([peg:string str]
-                        [peg:sp (box 0)]
-                        [peg:fail-stack (box (list (lambda () err)))])
-           (name (lambda (res)
-                   (display "success! ")
-                   (write res)
-                   (newline)))))]))
+     (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)])
+       #'(let ((fail-cont (lambda ()
+                            (error "parse failed at location" (unbox (pegvm-input-position)))))
+               (success-cont (lambda (res)
+                               (display "parse successful! ")
+                               (write (peg-result->object res))
+                               (newline)
+                               res)))
+           (parameterize ([pegvm-input-text str]
+                          [pegvm-input-position (box 0)]
+                          [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
+                          [pegvm-stashed-stacks (box '())]
+                          [pegvm-negation? (box 0)])
+             (name success-cont))))]))
 
 
 ;;;;
-;; Testing
+;; testing it
 
+(define-peg digit (choice (char #\0) (call nonzero)))
+(define-peg nonzero (range "123456789"))
+(define-peg number (choice (char #\0)
+                           (name n (seq (call nonzero) (star (call digit)))))
+  (if n (string->number n) 0))
+(define-peg pm-number (seq (optional (name neg (char #\-))) (name n (call number)))
+  (if neg (- n) n))
+;> (peg pm-number "0")
+;parse successful! 0
+;> (peg pm-number "01")
+;parse successful! 0
+;> (peg pm-number "321")
+;parse successful! 321
+;> (peg pm-number "-321")
+;parse successful! -321
+;> (peg pm-number "100")
+;parse successful! 100
 
-(define-peg digit
-  (range "0123456789"))
-(define-peg nonzero-digit
-  (range "123456789"))
-(define-peg number
-  (seq (name hd (call nonzero-digit))
-       (name tl (star (call digit))))
-  (string->number (string-append* (cons hd tl))))
-
-(define-peg sum
-  (seq (name n1 (call number))
-       (optional (seq (name op (choice (char #\+) (char #\-)))
-                      (name n2 (call sum)))))
-  (if op
-      `(,op ,n1 ,n2)
-      n1))
-
-(define-peg sheep
-  (seq (call sh) (seq (call eE2) (string "p!"))))
-(define-peg sh (string "sh"))
-(define-peg eE
-  (choice (seq (string "eE")
-               (call eE))
-          (epsilon)))
-(define-peg eE2
-  (plus (choice (string "eE")
-                (string "Ee"))))
-
-(define-peg bracks
-  (choice (seq (char #\()
-               (seq ;(star (char #\x))
-                (name res (star (call bracks)))
-                (char #\))))
-          (name res (call symbl)))
+(define-peg symbol (seq (name s (plus (seq (not (char #\space))
+                                           (not (char #\())
+                                           (not (char #\)))
+                                           (any-char))))
+                        (star (char #\space)))
+  (string->symbol s))
+(define-peg sexp (choice (seq (char #\()
+                              (name res (star (call sexp)))
+                              (char #\))
+                              (star (char #\space)))
+                         (name res (call symbol)))
   res)
-(define-peg symbl
-  (seq (name res (plus (seq (not (char #\())
-                            (seq (not (char #\)))
-                                 (seq (not (char #\space))
-                                      (any-char))))))
-       (star (char #\space)))
-  (string->symbol (string-append* res)))
+;> (peg sexp "(foob (ar baz)quux)")
+;parse successful! (foob (ar baz) quux)
 
-(peg sheep "sheEeEeEp!")
-(peg sum "3000974+53+4-23424")
-(peg bracks "(foo(y()()())bar (baz 429))")
+(define-peg plus-minus
+  (name res (choice #\+ #\-))
+  (case (string->symbol res)
+    ((+) +)
+    ((-) -)))
+(define-peg expr-sum
+  (seq (name n1 expr-factor) (optional (seq (name op plus-minus) (name n2 expr-sum))))
+  (if n2 (op n1 n2) n1))
+(define-peg expr-factor
+  (seq (name n1 expr-atom) (optional (seq #\* (name n2 expr-factor))))
+  (if n2 (* n1 n2) n1))
+(define-peg expr-atom
+  (choice (seq #\( (name res expr-sum) #\))
+          (name res pm-number))
+  res)
+;> (peg expr-sum "7*(2+3)")
+;parse successful! 35
+;35
+;> (peg expr-sum "7*2+3")
+;parse successful! 17
+;17
+;> (peg expr-sum "(7*2)+3")
+;parse successful! 17
+;17
+
