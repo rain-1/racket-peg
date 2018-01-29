@@ -27,19 +27,24 @@
 ;;;;
 ;; sequences
 
-;; a peg parse result will be;
-;; - a peg-result string
-;; - a sequence of peg parse results
-;; - a user specified scheme object
-
-;; peg-result strings are joined
-;; sequences are concatenated
-;; scheme objects are put into sequences
-
-;; joining a peg-result string with a sequence that starts with a peg result should join the string!
-;; we need to be really careful about empty sequences not obstructing us from seeing a peg-result string
-
-;; this is horrible
+;; by default a peg parse will return the matched string
+;;   e.g. (star #\A) "AAAA!" should return "AAAA"
+;;
+;; but users can define semantic actions that produce other kinds of scheme objects
+;;   for example if you defined a parser for numbers that produced a single number
+;;   (star number) "32 55 72" should return a sequence (32 55 72)
+;;
+;; this means we need some machinary for the results of a parse to get automatically
+;; joined together. so we define 2 data types:
+;; * joinable sequences
+;; * peg-result type - holds a string, but it's a distinct type from string
+;;
+;; and it needs to have a whole series of rules about automatic joining
+;; - any two peg-result strings next to each other should be automatically joined into one
+;; - joining a peg-result to a sequence should act like 'cons'
+;; - the reverse of that should act like 'snoc'
+;; - joining two sequences joins them
+;; - a singleton sequence containing a peg-result string => single string object
 
 (struct seq-elt (object) #:transparent)
 (struct seq-cat (subseqs) #:transparent)
@@ -112,16 +117,6 @@
 ;;         | (name nm <peg>)
 ;;         | (not <peg>)
 
-(define-for-syntax (peg-names exp)
-  (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not)
-    [(seq e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
-    [(choice e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
-    [(star e1) (peg-names #'e1)]
-    [(plus e1) (peg-names #'e1)]
-    [(optional e1) (peg-names #'e1)]
-    [(name nm subexp) (cons #'nm (peg-names #'subexp))]
-    [else '()]))
-
 
 ;;;;
 ;; pegvm registers and dynamic control
@@ -154,6 +149,18 @@
 
 ;;;;
 ;; peg compiler
+
+(define-for-syntax (peg-names exp)
+  (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not)
+    [(seq e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
+    [(seq e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(seq e2 . e3)))]
+    [(choice e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
+    [(choice e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(choice e2 . e3)))]
+    [(star e1) (peg-names #'e1)]
+    [(plus e1) (peg-names #'e1)]
+    [(optional e1) (peg-names #'e1)]
+    [(name nm subexp) (cons #'nm (peg-names #'subexp))]
+    [else '()]))
 
 (define-for-syntax (peg-compile exp sk)
   (define (single-char-pred sk x cond)
@@ -335,3 +342,20 @@
 ;parse successful! 17
 ;17
 
+
+(define-peg regex-range
+  (seq #\[ (optional (name neg #\^)) (name res (star (choice regex-range-range regex-range-single))) #\])
+  (if neg `(negate ,res) res))
+(define-peg regex-range-range
+  (seq (name c1 (any-char)) #\- (name c2 (any-char)))
+  `(range ,c1 ,c2))
+(define-peg regex-range-single
+  (name c1 (seq (not #\-) (any-char)))
+  `(single ,c1))
+
+;> (peg regex-range "[a-zA-Z0-9_]")
+;parse successful! ((range "a" "z") (range "A" "Z") (range "0" "9") (single "_"))
+;'((range "a" "z") (range "A" "Z") (range "0" "9") (single "_"))
+;> (peg regex-range "[^0-9]")
+;parse successful! (negate (range "0" "9"))
+;'(negate (range "0" "9"))
