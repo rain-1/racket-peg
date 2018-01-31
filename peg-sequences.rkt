@@ -82,4 +82,4 @@
                           #t))
         ((peg-result? (car lst))
          (cons (peg-result-str (car lst)) (cat-peg-results (cdr lst) #f)))
-        (else (cons (car lst) (cat-peg-results (cdr lst) #f)))))
+        (else (cons (peg-result->object (car lst)) (cat-peg-results (cdr lst) #f)))))

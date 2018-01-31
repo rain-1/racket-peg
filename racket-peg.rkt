@@ -1,6 +1,8 @@
 #lang racket
 
-(provide define-peg peg)
+(provide define-peg
+         define-peg/tag
+         peg)
 
 (require (for-syntax racket/syntax))
 
@@ -33,6 +35,7 @@
 ;;         | (call nm)
 ;;         | (name nm <peg>)
 ;;         | (not <peg>)
+;;         | (drop <peg>)
 
 
 ;;;;
@@ -68,7 +71,7 @@
 ;; peg compiler
 
 (define-for-syntax (peg-names exp)
-  (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not)
+  (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not drop)
     [(seq e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
     [(seq e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(seq e2 . e3)))]
     [(choice e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
@@ -77,6 +80,7 @@
     [(plus e1) (peg-names #'e1)]
     [(optional e1) (peg-names #'e1)]
     [(name nm subexp) (cons #'nm (peg-names #'subexp))]
+    [(drop e1) (peg-names #'e1)]
     [else '()]))
 
 (define-for-syntax (peg-compile exp sk)
@@ -90,7 +94,7 @@
                          (sk (peg-result (char->string x))))
                   (pegvm-fail))))))
   (with-syntax ([sk sk])
-    (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not)
+    (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not drop)
       [(epsilon)
        #'(sk empty-sequence)]
       [(char c)
@@ -157,6 +161,10 @@
              (pegvm-enter-negation!)
              (pegvm-push-alternative! fk)
              p))]
+      [(drop e)
+       (with-syntax ([p (peg-compile #'e #'sk^)])
+         #'(let ((sk^ (lambda (_) (sk empty-sequence))))
+             p))]
       [_ (let ((shorthand (syntax-e exp)))
            (cond ((char? shorthand) (peg-compile #`(char #,exp) #'sk))
                  ((string? shorthand) (peg-compile #`(string #,exp) #'sk))
@@ -178,6 +186,11 @@
            (let* bindings
              (let ((sk^ (lambda (res) (sk action))))
                body))))]))
+
+(define-syntax (define-peg/tag stx)
+  (syntax-case stx ()
+    [(_ rule-name exp)
+     #'(define-peg rule-name (name res exp) `(rule-name . ,res))]))
 
 (define-syntax (peg stx)
   (syntax-case stx ()
