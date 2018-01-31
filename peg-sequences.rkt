@@ -33,6 +33,49 @@
 ;;;;
 ;; peg results
 
+
+#|
+
+;; Just basic PEG rules
+
+By default the result of a PEG rule will be the string it matched.
+To implement this we make a sequence of peg-result objects, so for example:
+
+the result of matching the rule
+   (seq #\f "oo")
+on the input "foo" would give
+   (seq-cat (list (seq-elt "f") (seq-elt "oo")))
+which represents
+   "foo"
+
+The function `peg-result->object` turns the representation back into the string,
+it does this by transforming the sequence into a list then appending all the
+peg-result string objects that are next to each other in the list.
+
+
+;; Mixing in semantic actions
+
+The PEG results produced by operators like `and` and `*` build final results out of
+partial results using `peg-result-join`. At the end of the parse this can be converted
+into a regular scheme object using `peg-result->object`.
+
+The implementation is complicated by the fact that PEG parsers can also produce scheme
+values using semantic actions. For example you might make a `number` rule that matches
+strings like `"35"` but producing as its result the number `35`, not just the string.
+In that case we need `(* number)` on `"35 66 72"` to produce a list of numbers.
+
+To achieve this our `peg-result-join` operation has to
+* join sequences together
+* cons/snoc regular scheme objects onto existing sequences
+
+Secondly, `peg-result->object` can no longer just join all the peg-result strings in the
+result sequence together. It has to leave scheme objects alone!
+
+It also has a new singletonization rule: A length 1 sequence containing a peg-result string
+represents a string, not a length 1 list with a string in it.
+
+|#
+
 (struct peg-result (str) #:transparent)
 
 (define (peg-result-append x y)
@@ -54,9 +97,6 @@
         (else x)))
 
 (define (concat-peg-result-strings singletonize? lst)
-  ;; singletonization should only apply to a length one sequence containing a peg-result
-  ;; because we want kleene star of a value producer to make a list of values (even when there is only 1)
-  ;; but what about (and x y) where x produces a value and y produces the empty sequence?
   (cond ((null? lst)
          '())
         ((and (null? (cdr lst))
