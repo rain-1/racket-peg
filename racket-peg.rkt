@@ -194,20 +194,20 @@
 
 (define-syntax (peg stx)
   (syntax-case stx ()
-    [(_ rule-name str)
-     (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)])
-       #'(let ((fail-cont (lambda ()
-                            (error "parse failed at location" (unbox (pegvm-input-position)))))
-               (success-cont (lambda (res)
-                               (display "parse successful! ")
-                               (write (peg-result->object res))
-                               (newline)
-                               res)))
-           (parameterize ([pegvm-input-text str]
-                          [pegvm-input-position (box 0)]
-                          [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
-                          [pegvm-stashed-stacks (box '())]
-                          [pegvm-negation? (box 0)])
-             (name success-cont))))]))
+    [(_ exp str)
+     #'(let ((fail-cont (lambda ()
+                          (error "parse failed at location" (unbox (pegvm-input-position)))))
+             (success-cont (lambda (res)
+                             (display "parse successful! ")
+                             (write (peg-result->object res))
+                             (newline)
+                             res)))
+         (define-peg local exp)
+         (parameterize ([pegvm-input-text str]
+                        [pegvm-input-position (box 0)]
+                        [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
+                        [pegvm-stashed-stacks (box '())]
+                        [pegvm-negation? (box 0)])
+           (peg-rule:local success-cont)))]))
 
 

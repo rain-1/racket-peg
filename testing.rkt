@@ -28,14 +28,25 @@
                                         (any-char))))
                         (* (char #\space)))
   (string->symbol s))
+(define-peg symbols (name res (* symbol)) res)
 (define-peg sexp (or (and (char #\()
                           (name res (* (call sexp)))
                           (char #\))
                           (* (char #\space)))
                      (name res (call symbol)))
   res)
-;> (peg sexp "(foob (ar baz)quux)")
-;parse successful! (foob (ar baz) quux)
+
+(check-equal? (peg symbol "foo") 'foo)
+(check-equal? (peg symbol "bar baz") 'bar)
+(check-equal? (peg symbols "bar baz") '(bar baz))
+(check-equal? (peg sexp "()") '())
+(check-equal? (peg sexp "(a)") '(a))
+(check-equal? (peg sexp "(a b)") '(a b))
+(check-equal? (peg sexp "(a b c)") '(a b c))
+(check-equal? (peg sexp "(foob (ar baz)quux)") '(foob (ar baz) quux))
+(check-equal? (peg sexp "((())(()(())))") '((())(()(()))))
+(check-equal? (peg sexp "(((o))(u(u)((e)x))o)") '(((o))(u(u)((e)x))o))
+(check-equal? (peg sexp "(lambda (x) (list x (list (quote quote) x)))") '(lambda (x) (list x (list (quote quote) x))))
 
 (define-peg +-minus
   (name res (or #\+ #\-))
@@ -52,20 +63,15 @@
   (or (and #\( (name res expr-sum) #\))
       (name res pm-number))
   res)
-;> (peg expr-sum "7*(2+3)")
-;parse successful! 35
-;35
-;> (peg expr-sum "7*2+3")
-;parse successful! 17
-;17
-;> (peg expr-sum "(7*2)+3")
-;parse successful! 17
-;17
+
+(check-equal? (peg expr-sum "7*(2+3)") 35)
+(check-equal?  (peg expr-sum "7*2+3") 17)
+(check-equal?  (peg expr-sum "(7*2)+3") 17)
 
 
 (define-peg regex-range
   (and #\[ (? (name neg #\^)) (name res (* (or regex-range-range regex-range-single))) #\])
-  (if neg `(negate ,res) res))
+  (if neg `(negate . ,res) res))
 (define-peg regex-range-range
   (and (name c1 (any-char)) #\- (name c2 (any-char)))
   `(range ,c1 ,c2))
@@ -73,12 +79,9 @@
   (name c1 (and (! #\-) (any-char)))
   `(single ,c1))
 
-;> (peg regex-range "[a-zA-Z0-9_]")
-;parse successful! ((range "a" "z") (range "A" "Z") (range "0" "9") (single "_"))
-;'((range "a" "z") (range "A" "Z") (range "0" "9") (single "_"))
-;> (peg regex-range "[^0-9]")
-;parse successful! (negate (range "0" "9"))
-;'(negate (range "0" "9"))
+(check-equal? (peg regex-range "[a-zA-Z0-9_]")
+              '((range "a" "z") (range "A" "Z") (range "0" "9") (single "_")))
+(check-equal? (peg regex-range "[^0-9]") '(negate (range "0" "9")))
 
 
 ;; https://www.gnu.org/software/guile/manual/html_node/PEG-Tutorial.html#PEG-Tutorial
@@ -92,11 +95,9 @@ nobody:x:65534:65534:nobody:/nonexistent:/bin/sh
 messagebus:x:103:107::/var/run/dbus:/bin/false
 ")
 
-(define-peg passwd (* entry))
-;(define-peg entry (and (name res (+ (and (! #\newline) (any-char)))) (* #\newline))
-;  res)
-(define-peg entry (name res (and login c pass c uid c gid c name-or-comment c homedir c shell newline+))
-  `(entry . ,res))
+(define-peg passwd (name res (* entry))
+  res)
+(define-peg/tag entry (and login c pass c uid c gid c name-or-comment c homedir c shell newline+))
 
 (define-peg text (* (and (! #\newline) (! c) (any-char))))
 (define-peg/drop c #\:)
@@ -113,57 +114,55 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
 (define-peg path-element (name res (+ (and (! #\/) (! #\newline) (! c) (any-char))))
   res)
 
-;> (pretty-print (peg-result->object (peg passwd *etc-passwd*)))
-;parse successful! ((entry (login . "root") (pass . "x") (uid . "0") (gid . "0") (name-or-comment . "root") (homedir . "root") (shell "bin" "bash")) (entry (login . "daemon") (pass . "x") (uid . "1") (gid . "1") (name-or-comment . "daemon") (homedir "usr" "sbin") (shell "bin" "sh")) (entry (login . "bin") (pass . "x") (uid . "2") (gid . "2") (name-or-comment . "bin") (homedir . "bin") (shell "bin" "sh")) (entry (login . "sys") (pass . "x") (uid . "3") (gid . "3") (name-or-comment . "sys") (homedir . "dev") (shell "bin" "sh")) (entry (login . "nobody") (pass . "x") (uid . "65534") (gid . "65534") (name-or-comment . "nobody") (homedir . "nonexistent") (shell "bin" "sh")) (entry (login . "messagebus") (pass . "x") (uid . "103") (gid . "107") (name-or-comment) (homedir "var" "run" "dbus") (shell "bin" "false")))
-;'((entry
-;   (login . "root")
-;   (pass . "x")
-;   (uid . "0")
-;   (gid . "0")
-;   (name-or-comment . "root")
-;   (homedir . "root")
-;   (shell "bin" "bash"))
-;  (entry
-;   (login . "daemon")
-;   (pass . "x")
-;   (uid . "1")
-;   (gid . "1")
-;   (name-or-comment . "daemon")
-;   (homedir "usr" "sbin")
-;   (shell "bin" "sh"))
-;  (entry
-;   (login . "bin")
-;   (pass . "x")
-;   (uid . "2")
-;   (gid . "2")
-;   (name-or-comment . "bin")
-;   (homedir . "bin")
-;   (shell "bin" "sh"))
-;  (entry
-;   (login . "sys")
-;   (pass . "x")
-;   (uid . "3")
-;   (gid . "3")
-;   (name-or-comment . "sys")
-;   (homedir . "dev")
-;   (shell "bin" "sh"))
-;  (entry
-;   (login . "nobody")
-;   (pass . "x")
-;   (uid . "65534")
-;   (gid . "65534")
-;   (name-or-comment . "nobody")
-;   (homedir . "nonexistent")
-;   (shell "bin" "sh"))
-;  (entry
-;   (login . "messagebus")
-;   (pass . "x")
-;   (uid . "103")
-;   (gid . "107")
-;   (name-or-comment)
-;   (homedir "var" "run" "dbus")
-;   (shell "bin" "false")))
-
+(check-equal? (peg passwd *etc-passwd*)
+              '((entry
+                 (login . "root")
+                 (pass . "x")
+                 (uid . "0")
+                 (gid . "0")
+                 (name-or-comment . "root")
+                 (homedir "root")
+                 (shell "bin" "bash"))
+                (entry
+                 (login . "daemon")
+                 (pass . "x")
+                 (uid . "1")
+                 (gid . "1")
+                 (name-or-comment . "daemon")
+                 (homedir "usr" "sbin")
+                 (shell "bin" "sh"))
+                (entry
+                 (login . "bin")
+                 (pass . "x")
+                 (uid . "2")
+                 (gid . "2")
+                 (name-or-comment . "bin")
+                 (homedir "bin")
+                 (shell "bin" "sh"))
+                (entry
+                 (login . "sys")
+                 (pass . "x")
+                 (uid . "3")
+                 (gid . "3")
+                 (name-or-comment . "sys")
+                 (homedir "dev")
+                 (shell "bin" "sh"))
+                (entry
+                 (login . "nobody")
+                 (pass . "x")
+                 (uid . "65534")
+                 (gid . "65534")
+                 (name-or-comment . "nobody")
+                 (homedir "nonexistent")
+                 (shell "bin" "sh"))
+                (entry
+                 (login . "messagebus")
+                 (pass . "x")
+                 (uid . "103")
+                 (gid . "107")
+                 (name-or-comment)
+                 (homedir "var" "run" "dbus")
+                 (shell "bin" "false"))))
 
 (define-peg/tag cfunc (and cSP ctype cSP cname cSP cargs cLB cSP cbody cRB))
 (define-peg/tag ctype cidentifier)
@@ -187,9 +186,7 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
 (define-peg/drop cRB #\})
 (define-peg/drop cSP (* (or #\space #\newline)))
 
-;> (peg cfunc "int square(int a) { return a*a;}")
-;parse successful! (cfunc (ctype . "int") (cname . "square") (ctype . "int") (cname . "a") (cbody . "return a*a"))
-;'(cfunc (ctype . "int") (cname . "square") (ctype . "int") (cname . "a") (cbody . "return a*a"))
-;> (peg cfunc "int mod(int a, int b) { int c = a/b;return a-b*c; }")
-;parse successful! (cfunc (ctype . "int") (cname . "mod") (ctype . "int") (cname . "a") (ctype . "int") (cname . "b") (cbody "int c = a/b" "return a-b*c"))
-;'(cfunc (ctype . "int") (cname . "mod") (ctype . "int") (cname . "a") (ctype . "int") (cname . "b") (cbody "int c = a/b" "return a-b*c"))
+(check-equal? (peg cfunc "int square(int a) { return a*a;}")
+              '(cfunc (ctype . "int") (cname . "square") (ctype . "int") (cname . "a") (cbody "return a*a")))
+(check-equal? (peg cfunc "int mod(int a, int b) { int c = a/b;return a-b*c; }")
+              '(cfunc (ctype . "int") (cname . "mod") (ctype . "int") (cname . "a") (ctype . "int") (cname . "b") (cbody "int c = a/b" "return a-b*c")))
