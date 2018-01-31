@@ -22,18 +22,18 @@
 ;; peg s-exp syntax
 
 ;; <peg> ::= (epsilon)
-;;         | (char c)
+;;         | (char c) | c
 ;;         | (any-char)
 ;;         | (range str)
-;;         | (string str)
-;;         | (seq <peg> <peg>)
-;;         | (choice <peg> <peg>)
-;;         | (star <peg>)
-;;         | (plus <peg>)
-;;         | (optional <peg>)
-;;         | (call nm)
+;;         | (string str) | str
+;;         | (and <peg> <peg> ...)
+;;         | (or <peg> <peg> ...)
+;;         | (* <peg>)
+;;         | (+ <peg>)
+;;         | (? <peg>)
+;;         | (call nm) | nm
 ;;         | (name nm <peg>)
-;;         | (not <peg>)
+;;         | (! <peg>)
 ;;         | (drop <peg>)
 
 
@@ -42,7 +42,7 @@
 
 (define pegvm-input-text (make-parameter #f))      ;; The input string being parsed
 (define pegvm-input-position (make-parameter #f))  ;; The position inside the string
-(define pegvm-control-stack (make-parameter #f))   ;; For choice control flow
+(define pegvm-control-stack (make-parameter #f))   ;; For or control flow
 (define pegvm-stashed-stacks (make-parameter #f))  ;; For negation control flow
 (define pegvm-negation? (make-parameter #f))       ;; How many negations have we entered
 
@@ -70,14 +70,14 @@
 ;; peg compiler
 
 (define-for-syntax (peg-names exp)
-  (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not drop)
-    [(seq e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
-    [(seq e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(seq e2 . e3)))]
-    [(choice e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
-    [(choice e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(choice e2 . e3)))]
-    [(star e1) (peg-names #'e1)]
-    [(plus e1) (peg-names #'e1)]
-    [(optional e1) (peg-names #'e1)]
+  (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop)
+    [(and e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
+    [(and e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(and e2 . e3)))]
+    [(or e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
+    [(or e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(or e2 . e3)))]
+    [(* e1) (peg-names #'e1)]
+    [(+ e1) (peg-names #'e1)]
+    [(? e1) (peg-names #'e1)]
     [(name nm subexp) (cons #'nm (peg-names #'subexp))]
     [(drop e1) (peg-names #'e1)]
     [else '()]))
@@ -93,7 +93,7 @@
                          (sk (peg-result (char->string x))))
                   (pegvm-fail))))))
   (with-syntax ([sk sk])
-    (syntax-case exp (epsilon char any-char range string seq choice star plus optional call name not drop)
+    (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop)
       [(epsilon)
        #'(sk empty-sequence)]
       [(char c)
@@ -108,7 +108,7 @@
                (begin (pegvm-advance! str-len)
                       (sk (peg-result str)))
                (pegvm-fail)))]
-      [(seq e1 e2)
+      [(and e1 e2)
        (with-syntax ([p1 (peg-compile #'e1 #'mk)]
                      [p2 (peg-compile #'e2 #'sk^)])
          #'(let ((mk (lambda (r1)
@@ -116,16 +116,16 @@
                                     (sk (peg-result-join r1 r2)))))
                          p2))))
              p1))]
-      [(seq e1 e2 e3 ...)
-       (peg-compile #'(seq e1 (seq e2 e3 ...)) #'sk)]
-      [(choice e1 e2)
+      [(and e1 e2 e3 ...)
+       (peg-compile #'(and e1 (and e2 e3 ...)) #'sk)]
+      [(or e1 e2)
        (with-syntax ([p1 (peg-compile #'e1 #'sk)]
                      [p2 (peg-compile #'e2 #'sk)])
          #'(begin (pegvm-push-alternative! (lambda () p2))
                   p1))]
-      [(choice e1 e2 e3 ...)
-       (peg-compile #'(choice e1 (choice e2 e3 ...)) #'sk)]
-      [(star e)
+      [(or e1 e2 e3 ...)
+       (peg-compile #'(or e1 (or e2 e3 ...)) #'sk)]
+      [(* e)
        (with-syntax ([p (peg-compile #'e #'s+)])
          #'(letrec ((s* (lambda (res-acc)
                           (pegvm-push-alternative! (lambda () (sk res-acc)))
@@ -133,9 +133,9 @@
                                       (s* (peg-result-join res-acc res)))))
                             p))))
              (s* empty-sequence)))]
-      [(plus e)
-       (peg-compile #'(seq e (star e)) #'sk)]
-      [(optional e)
+      [(+ e)
+       (peg-compile #'(and e (* e)) #'sk)]
+      [(? e)
        (with-syntax ([p (peg-compile #'e #'sk)])
          #'(begin (pegvm-push-alternative! (lambda () (sk empty-sequence)))
                   p))]
@@ -149,7 +149,7 @@
                           (set! nm (peg-result->object r)))
                         (sk r))))
              p))]
-      [(not e)
+      [(! e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (_)
                         (pegvm-exit-negation!)

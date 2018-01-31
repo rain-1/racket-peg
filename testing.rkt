@@ -1,57 +1,55 @@
 #lang racket
 
+(require rackunit)
+
 (require "racket-peg.rkt")
 (require "peg-sequences.rkt")
 
 ;;;;
 ;; testing it
 
-(define-peg digit (choice (char #\0) (call nonzero)))
+(define-peg digit (or (char #\0) (call nonzero)))
 (define-peg nonzero (range "123456789"))
-(define-peg number (choice (char #\0)
-                           (name n (seq (call nonzero) (star (call digit)))))
+(define-peg number (or (char #\0)
+                           (name n (and (call nonzero) (* (call digit)))))
   (if n (string->number n) 0))
-(define-peg pm-number (seq (optional (name neg (char #\-))) (name n (call number)))
+(define-peg pm-number (and (? (name neg (char #\-))) (name n (call number)))
   (if neg (- n) n))
-;> (peg pm-number "0")
-;parse successful! 0
-;> (peg pm-number "01")
-;parse successful! 0
-;> (peg pm-number "321")
-;parse successful! 321
-;> (peg pm-number "-321")
-;parse successful! -321
-;> (peg pm-number "100")
-;parse successful! 100
 
-(define-peg symbol (seq (name s (plus (seq (not (char #\space))
-                                           (not (char #\())
-                                           (not (char #\)))
+(check-equal? (peg pm-number "0") 0)
+(check-equal? (peg pm-number "01") 0)
+(check-equal? (peg pm-number "321") 321)
+(check-equal? (peg pm-number "-321") -321)
+(check-equal? (peg pm-number "100") 100)
+
+(define-peg symbol (and (name s (+ (and (! (char #\space))
+                                           (! (char #\())
+                                           (! (char #\)))
                                            (any-char))))
-                        (star (char #\space)))
+                        (* (char #\space)))
   (string->symbol s))
-(define-peg sexp (choice (seq (char #\()
-                              (name res (star (call sexp)))
+(define-peg sexp (or (and (char #\()
+                              (name res (* (call sexp)))
                               (char #\))
-                              (star (char #\space)))
+                              (* (char #\space)))
                          (name res (call symbol)))
   res)
 ;> (peg sexp "(foob (ar baz)quux)")
 ;parse successful! (foob (ar baz) quux)
 
-(define-peg plus-minus
-  (name res (choice #\+ #\-))
+(define-peg +-minus
+  (name res (or #\+ #\-))
   (case (string->symbol res)
     ((+) +)
     ((-) -)))
 (define-peg expr-sum
-  (seq (name n1 expr-factor) (optional (seq (name op plus-minus) (name n2 expr-sum))))
+  (and (name n1 expr-factor) (? (and (name op +-minus) (name n2 expr-sum))))
   (if n2 (op n1 n2) n1))
 (define-peg expr-factor
-  (seq (name n1 expr-atom) (optional (seq #\* (name n2 expr-factor))))
+  (and (name n1 expr-atom) (? (and #\* (name n2 expr-factor))))
   (if n2 (* n1 n2) n1))
 (define-peg expr-atom
-  (choice (seq #\( (name res expr-sum) #\))
+  (or (and #\( (name res expr-sum) #\))
           (name res pm-number))
   res)
 ;> (peg expr-sum "7*(2+3)")
@@ -66,13 +64,13 @@
 
 
 (define-peg regex-range
-  (seq #\[ (optional (name neg #\^)) (name res (star (choice regex-range-range regex-range-single))) #\])
+  (and #\[ (? (name neg #\^)) (name res (* (or regex-range-range regex-range-single))) #\])
   (if neg `(negate ,res) res))
 (define-peg regex-range-range
-  (seq (name c1 (any-char)) #\- (name c2 (any-char)))
+  (and (name c1 (any-char)) #\- (name c2 (any-char)))
   `(range ,c1 ,c2))
 (define-peg regex-range-single
-  (name c1 (seq (not #\-) (any-char)))
+  (name c1 (and (! #\-) (any-char)))
   `(single ,c1))
 
 ;> (peg regex-range "[a-zA-Z0-9_]")
@@ -94,25 +92,25 @@ nobody:x:65534:65534:nobody:/nonexistent:/bin/sh
 messagebus:x:103:107::/var/run/dbus:/bin/false
 ")
 
-(define-peg passwd (star entry))
-;(define-peg entry (seq (name res (plus (seq (not #\newline) (any-char)))) (star #\newline))
+(define-peg passwd (* entry))
+;(define-peg entry (and (name res (+ (and (! #\newline) (any-char)))) (* #\newline))
 ;  res)
-(define-peg entry (name res (seq login c pass c uid c gid c name-or-comment c homedir c shell newline+))
+(define-peg entry (name res (and login c pass c uid c gid c name-or-comment c homedir c shell newline+))
   `(entry . ,res))
 
-(define-peg text (star (seq (not #\newline) (not c) (any-char))))
+(define-peg text (* (and (! #\newline) (! c) (any-char))))
 (define-peg/drop c #\:)
-(define-peg/drop newline+ (plus #\newline))
+(define-peg/drop newline+ (+ #\newline))
 
 (define-peg/tag login text)
 (define-peg/tag pass text)
-(define-peg/tag uid (star digit))
-(define-peg/tag gid (star digit))
+(define-peg/tag uid (* digit))
+(define-peg/tag gid (* digit))
 (define-peg/tag name-or-comment text)
 (define-peg/tag homedir path)
 (define-peg/tag shell path)
-(define-peg path (star (seq (drop #\/) path-element)))
-(define-peg path-element (name res (plus (seq (not #\/) (not #\newline) (not c) (any-char))))
+(define-peg path (* (and (drop #\/) path-element)))
+(define-peg path-element (name res (+ (and (! #\/) (! #\newline) (! c) (any-char))))
   res)
 
 ;> (pretty-print (peg-result->object (peg passwd *etc-passwd*)))
@@ -167,19 +165,19 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
 ;   (shell "bin" "false")))
 
 
-(define-peg/tag cfunc (seq cSP ctype cSP cname cSP cargs cLB cSP cbody cRB))
+(define-peg/tag cfunc (and cSP ctype cSP cname cSP cargs cLB cSP cbody cRB))
 (define-peg/tag ctype cidentifier)
 (define-peg/tag cname cidentifier)
-(define-peg cargs (seq cLP (star (seq (not (seq cSP cRP)) carg cSP (choice cCOMMA cRP) cSP)) cSP)) ;; !
-(define-peg carg (seq cSP ctype cSP cname))
-(define-peg/tag cbody (star cstatement))
-(define-peg cidentifier (seq (choice (range "abcdefghijklmnopqrstuvwxyz")
+(define-peg cargs (and cLP (* (and (! (and cSP cRP)) carg cSP (or cCOMMA cRP) cSP)) cSP)) ;; !
+(define-peg carg (and cSP ctype cSP cname))
+(define-peg/tag cbody (* cstatement))
+(define-peg cidentifier (and (or (range "abcdefghijklmnopqrstuvwxyz")
                                      (range "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-                             (star (choice (range "abcdefghijklmnopqrstuvwxyz")
+                             (* (or (range "abcdefghijklmnopqrstuvwxyz")
                                            (range "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
                                            (range "0123456789")
                                            #\-))))
-(define-peg cstatement (name res (seq (star (seq (not #\;) (any-char))) cSC cSP))
+(define-peg cstatement (name res (and (* (and (! #\;) (any-char))) cSC cSP))
   res)
 (define-peg/drop cSC #\;)
 (define-peg/drop cCOMMA #\,)
@@ -187,7 +185,7 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
 (define-peg/drop cRP #\))
 (define-peg/drop cLB #\{)
 (define-peg/drop cRB #\})
-(define-peg/drop cSP (star (choice #\space #\newline)))
+(define-peg/drop cSP (* (or #\space #\newline)))
 
 ;> (peg cfunc "int square(int a) { return a*a;}")
 ;parse successful! (cfunc (ctype . "int") (cname . "square") (ctype . "int") (cname . "a") (cbody . "return a*a"))
