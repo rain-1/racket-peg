@@ -101,8 +101,8 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
   `(entry . ,res))
 
 (define-peg text (star (seq (not #\newline) (not c) (any-char))))
-(define-peg c (drop #\:))
-(define-peg newline+ (drop (plus #\newline)))
+(define-peg/drop c #\:)
+(define-peg/drop newline+ (plus #\newline))
 
 (define-peg/tag login text)
 (define-peg/tag pass text)
@@ -112,7 +112,7 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
 (define-peg/tag homedir path)
 (define-peg/tag shell path)
 (define-peg path (star (seq (drop #\/) path-element)))
-(define-peg path-element (plus (seq (not #\/) (not #\newline) (not c) (any-char)))
+(define-peg path-element (name res (plus (seq (not #\/) (not #\newline) (not c) (any-char))))
   res)
 
 ;> (pretty-print (peg-result->object (peg passwd *etc-passwd*)))
@@ -165,3 +165,33 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
 ;   (name-or-comment)
 ;   (homedir "var" "run" "dbus")
 ;   (shell "bin" "false")))
+
+
+(define-peg/tag cfunc (seq cSP ctype cSP cname cSP cargs cLB cSP cbody cRB))
+(define-peg/tag ctype cidentifier)
+(define-peg/tag cname cidentifier)
+(define-peg cargs (seq cLP (star (seq (not (seq cSP cRP)) carg cSP (choice cCOMMA cRP) cSP)) cSP)) ;; !
+(define-peg carg (seq cSP ctype cSP cname))
+(define-peg/tag cbody (star cstatement))
+(define-peg cidentifier (seq (choice (range "abcdefghijklmnopqrstuvwxyz")
+                                     (range "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                             (star (choice (range "abcdefghijklmnopqrstuvwxyz")
+                                           (range "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                                           (range "0123456789")
+                                           #\-))))
+(define-peg cstatement (name res (seq (star (seq (not #\;) (any-char))) cSC cSP))
+  res)
+(define-peg/drop cSC #\;)
+(define-peg/drop cCOMMA #\,)
+(define-peg/drop cLP #\()
+(define-peg/drop cRP #\))
+(define-peg/drop cLB #\{)
+(define-peg/drop cRB #\})
+(define-peg/drop cSP (star (choice #\space #\newline)))
+
+;> (peg cfunc "int square(int a) { return a*a;}")
+;parse successful! (cfunc (ctype . "int") (cname . "square") (ctype . "int") (cname . "a") (cbody . "return a*a"))
+;'(cfunc (ctype . "int") (cname . "square") (ctype . "int") (cname . "a") (cbody . "return a*a"))
+;> (peg cfunc "int mod(int a, int b) { int c = a/b;return a-b*c; }")
+;parse successful! (cfunc (ctype . "int") (cname . "mod") (ctype . "int") (cname . "a") (ctype . "int") (cname . "b") (cbody "int c = a/b" "return a-b*c"))
+;'(cfunc (ctype . "int") (cname . "mod") (ctype . "int") (cname . "a") (ctype . "int") (cname . "b") (cbody "int c = a/b" "return a-b*c"))

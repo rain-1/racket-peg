@@ -1,7 +1,6 @@
 #lang racket
 
-(provide define-peg
-         define-peg/tag
+(provide define-peg define-peg/tag define-peg/drop
          peg)
 
 (require (for-syntax racket/syntax))
@@ -188,9 +187,10 @@
                body))))]))
 
 (define-syntax (define-peg/tag stx)
-  (syntax-case stx ()
-    [(_ rule-name exp)
-     #'(define-peg rule-name (name res exp) `(rule-name . ,res))]))
+  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) `(rule-name . ,res))]))
+
+(define-syntax (define-peg/drop stx)
+  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (drop exp))]))
 
 (define-syntax (peg stx)
   (syntax-case stx ()
