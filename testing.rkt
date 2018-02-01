@@ -195,3 +195,22 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
               '(cfunc (ctype . "int") (cname . "square") (ctype . "int") (cname . "a") (cbody "return a*a")))
 (check-equal? (peg cfunc "int mod(int a, int b) { int c = a/b;return a-b*c; }")
               '(cfunc (ctype . "int") (cname . "mod") (ctype . "int") (cname . "a") (ctype . "int") (cname . "b") (cbody "int c = a/b" "return a-b*c")))
+
+
+;; boolean logic grammar
+
+(define-peg blg (and _ blg-exp-or))
+(define-peg _ (* #\space))
+
+(define-peg blg-op-or (and "or" _))
+(define-peg blg-op-and (and "and" _))
+(define-peg blg-bool-true (and "true" _))
+(define-peg blg-bool-false (and "false" _))
+(define-peg/bake blg-bool (or blg-bool-true blg-bool-false))
+(define-peg/tag blg-exp-or (and blg-exp-and (* (and blg-op-or blg-exp-and))))
+(define-peg/tag blg-exp-and (and blg-bool (* (and blg-op-and blg-bool))))
+
+(check-equal? (peg blg "true or true and false")
+              (seq-cat (list (seq-cat '()) (seq-elt '(blg-exp-or (blg-exp-and "true ") "or " (blg-exp-and "true " "and " "false"))))))
+(check-equal? (peg blg "true and false")
+              (seq-cat (list (seq-cat '()) (seq-elt '(blg-exp-or (blg-exp-and "true " "and " "false"))))))

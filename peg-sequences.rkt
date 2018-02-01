@@ -103,9 +103,11 @@ represents a string, not a length 1 list with a string in it.
               singletonize?
               (peg-result? (car lst)))
          (peg-result-str (car lst)))
-        ((and (peg-result? (car lst))
+        ((and (not (null? (cdr lst)))
+              (peg-result? (car lst))
               (peg-result? (cadr lst)))
          (concat-peg-result-strings singletonize? (cons (peg-result-append (car lst) (cadr lst)) (cddr lst))))
         (else
-         (cons (car lst) (concat-peg-result-strings #f (cdr lst))))))
+         (cons (peg-result->object (car lst))
+               (concat-peg-result-strings #f (cdr lst))))))
 
