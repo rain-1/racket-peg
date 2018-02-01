@@ -200,7 +200,7 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
 ;; boolean logic grammar
 
 (define-peg blg (and _ blg-exp-or))
-(define-peg _ (* #\space))
+(define-peg/drop _ (* (or #\space #\newline)))
 
 (define-peg blg-op-or (and "or" _))
 (define-peg blg-op-and (and "and" _))
@@ -211,6 +211,44 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
 (define-peg/tag blg-exp-and (and blg-bool (* (and blg-op-and blg-bool))))
 
 (check-equal? (peg blg "true or true and false")
-              (seq-cat (list (seq-cat '()) (seq-elt '(blg-exp-or (blg-exp-and "true ") "or " (blg-exp-and "true " "and " "false"))))))
+              (seq-cat (list (seq-cat '()) (seq-elt '(blg-exp-or (blg-exp-and "true") "or" (blg-exp-and "true" "and" "false"))))))
 (check-equal? (peg blg "true and false")
-              (seq-cat (list (seq-cat '()) (seq-elt '(blg-exp-or (blg-exp-and "true " "and " "false"))))))
+              (seq-cat (list (seq-cat '()) (seq-elt '(blg-exp-or (blg-exp-and "true" "and" "false"))))))
+
+;;; Tiny
+
+(define-peg/bake tiny (and cmd-seq (! (any-char))))
+(define-peg cmd-seq (and cmd semicolon (* (and cmd semicolon))))
+(define-peg cmd (or if-cmd
+                    repeat-cmd
+                    assign-cmd
+                    read-cmd
+                    write-cmd))
+(define-peg/tag if-cmd (and "IF" _ expr-sum "THEN" _ cmd-seq (? (and "ELSE" _ cmd-seq)) "END" _))
+(define-peg/tag repeat-cmd (and "REPEAT" _ cmd-seq "UNTIL" _ expr-sum))
+(define-peg/tag assign-cmd (and symbol _ ":=" _ expr-sum))
+(define-peg/tag read-cmd (and "READ" _ symbol))
+(define-peg/tag write-cmd (and "WRITE" _ symbol))
+(define-peg/drop semicolon (and #\; _))
+
+(define *tiny-example*
+  "n := 5;
+   f := 1;
+   REPEAT
+      f := 5*7;
+      n := 3-1;
+   UNTIL 1;
+   WRITE f;")
+
+(check-equal? (peg tiny "n := 5;")
+              '((assign-cmd n ":=" 5)))
+(check-equal? (peg tiny "f := 5*7;")
+              '((assign-cmd f ":=" 35)))
+(check-equal? (peg tiny "f := 5*7; WRITE f;")
+              '((assign-cmd f ":=" 35)
+                (write-cmd "WRITE" f)))
+(check-equal? (peg tiny *tiny-example*)
+              '((assign-cmd n ":=" 5)
+                (assign-cmd f ":=" 1)
+                (repeat-cmd "REPEAT" (assign-cmd f ":=" 35) (assign-cmd n ":=" 2) "UNTIL" 1)
+                (write-cmd "WRITE" f)))
