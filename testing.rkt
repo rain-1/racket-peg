@@ -48,6 +48,11 @@
 (check-equal? (peg sexp "(((o))(u(u)((e)x))o)") '(((o))(u(u)((e)x))o))
 (check-equal? (peg sexp "(lambda (x) (list x (list (quote quote) x)))") '(lambda (x) (list x (list (quote quote) x))))
 
+;(peg sexp "(")
+;(peg sexp "(foo")
+;(peg sexp "(((foo((((bar(((baz(((")
+;(peg sexp "(((foo((((bar(((baz(((quux")
+
 (define-peg +-minus
   (name res (or #\+ #\-))
   (case (string->symbol res)
@@ -65,8 +70,8 @@
   res)
 
 (check-equal? (peg expr-sum "7*(2+3)") 35)
-(check-equal?  (peg expr-sum "7*2+3") 17)
-(check-equal?  (peg expr-sum "(7*2)+3") 17)
+(check-equal? (peg expr-sum "7*2+3") 17)
+(check-equal? (peg expr-sum "(7*2)+3") 17)
 
 
 (define-peg regex-range

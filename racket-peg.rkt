@@ -1,6 +1,7 @@
 #lang racket
 
-(provide define-peg define-peg/tag define-peg/drop
+(provide define-peg
+         define-peg/bake define-peg/drop define-peg/tag
          peg)
 
 (require (for-syntax racket/syntax))
@@ -46,6 +47,10 @@
 (define pegvm-stashed-stacks (make-parameter #f))  ;; For negation control flow
 (define pegvm-negation? (make-parameter #f))       ;; How many negations have we entered
 
+(define pegvm-best-failure (make-parameter #f))    ;; For error messages
+(define pegvm-current-rule (make-parameter #f))
+(define pegvm-current-choice (make-parameter #f))
+
 (struct control-frame (position label) #:transparent)
 
 (define (pegvm-eof?) (= (string-length (pegvm-input-text)) (unbox (pegvm-input-position))))
@@ -53,6 +58,7 @@
 (define (pegvm-advance! n) (set-box! (pegvm-input-position) (+ (unbox (pegvm-input-position)) n)))
 (define (pegvm-push-alternative! alt) (push! (pegvm-control-stack) (control-frame (unbox (pegvm-input-position)) alt)))
 (define (pegvm-fail)
+  (pegvm-update-best-error!)
   (let ((cf (pop! (pegvm-control-stack))))
     (when (control-frame-position cf)
       (set-box! (pegvm-input-position) (control-frame-position cf)))
@@ -64,6 +70,11 @@
 (define (pegvm-exit-negation!)
   (set-box! (pegvm-negation?) (- (unbox (pegvm-negation?)) 1))
   (set-box! (pegvm-control-stack) (pop! (pegvm-stashed-stacks))))
+
+(define (pegvm-update-best-error!)
+  (when (or (not (unbox (pegvm-best-failure)))
+            (> (unbox (pegvm-input-position)) (car (unbox (pegvm-best-failure)))))
+    (set-box! (pegvm-best-failure) (list (unbox (pegvm-input-position)) (pegvm-current-rule) (pegvm-current-choice)))))
 
 
 ;;;;
@@ -93,7 +104,8 @@
                          (sk (peg-result (char->string x))))
                   (pegvm-fail))))))
   (with-syntax ([sk sk])
-    (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop)
+    (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop
+                              $or)
       [(epsilon)
        #'(sk empty-sequence)]
       [(char c)
@@ -118,13 +130,19 @@
              p1))]
       [(and e1 e2 e3 ...)
        (peg-compile #'(and e1 (and e2 e3 ...)) #'sk)]
-      [(or e1 e2)
+      [($or e1 e2)
        (with-syntax ([p1 (peg-compile #'e1 #'sk)]
                      [p2 (peg-compile #'e2 #'sk)])
          #'(begin (pegvm-push-alternative! (lambda () p2))
                   p1))]
+      [(or e1 e2)
+       (with-syntax ([p (peg-compile #'($or e1 e2) #'sk)])
+         #'(parameterize ([pegvm-current-choice '(or e1 e2)])
+             p))]
       [(or e1 e2 e3 ...)
-       (peg-compile #'(or e1 (or e2 e3 ...)) #'sk)]
+       (with-syntax ([p (peg-compile #'($or e1 (or e2 e3 ...)) #'sk)])
+         #'(parameterize ([pegvm-current-choice '(or e1 e2 e3 ...)])
+             p))]
       [(* e)
        (with-syntax ([p (peg-compile #'e #'s+)])
          #'(letrec ((s* (lambda (res-acc)
@@ -182,21 +200,29 @@
                    [body (peg-compile #'exp #'sk^)]
                    [action (if (syntax-e #'action) #'action #'res)])
        #'(define (name sk)
-           (let* bindings
-             (let ((sk^ (lambda (res) (sk action))))
-               body))))]))
-
-(define-syntax (define-peg/tag stx)
-  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) `(rule-name . ,res))]))
+           (parameterize ([pegvm-current-rule 'name])
+             (let* bindings
+               (let ((sk^ (lambda (res) (sk action))))
+                 body)))))]))
 
 (define-syntax (define-peg/drop stx)
   (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (drop exp))]))
+
+(define-syntax (define-peg/bake stx)
+  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) res)]))
+
+(define-syntax (define-peg/tag stx)
+  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) `(rule-name . ,res))]))
 
 (define-syntax (peg stx)
   (syntax-case stx ()
     [(_ exp str)
      #'(let ((fail-cont (lambda ()
-                          (error "parse failed at location" (unbox (pegvm-input-position)))))
+                          (error 'peg "parse failed in rule ~a at location ~a with options ~v"
+                                 (cadr (unbox (pegvm-best-failure)))
+                                 (car (unbox (pegvm-best-failure)))
+                                 (caddr (unbox (pegvm-best-failure)))
+                                 )))
              (success-cont (lambda (res)
                              (display "parse successful! ")
                              (write (peg-result->object res))
@@ -207,7 +233,8 @@
                         [pegvm-input-position (box 0)]
                         [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
                         [pegvm-stashed-stacks (box '())]
-                        [pegvm-negation? (box 0)])
+                        [pegvm-negation? (box 0)]
+                        [pegvm-best-failure (box #f)])
            (peg-rule:local success-cont)))]))
 
 
