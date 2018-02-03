@@ -252,3 +252,22 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
                 (assign-cmd f ":=" 1)
                 (repeat-cmd "REPEAT" (assign-cmd f ":=" 35) (assign-cmd n ":=" 2) "UNTIL" 1)
                 (write-cmd "WRITE" f)))
+
+;;
+
+(define-peg multibrack
+  (* (or multibrack-paren
+         multibrack-square
+         multibrack-brace
+         multibrack-angle)))
+(define-peg/tag multibrack-paren (and (drop #\() multibrack (drop #\))))
+(define-peg/tag multibrack-square (and (drop #\[) multibrack (drop #\])))
+(define-peg/tag multibrack-brace (and (drop #\{) multibrack (drop #\})))
+(define-peg/tag multibrack-angle (and (drop #\<) multibrack (drop #\>)))
+
+(check-equal? (peg-result->object (peg multibrack "([][{{}}{}]{}[])"))
+              '((multibrack-paren (multibrack-square)
+                                  (multibrack-square (multibrack-brace (multibrack-brace))
+                                                     (multibrack-brace))
+                                  (multibrack-brace)
+                                  (multibrack-square))))
