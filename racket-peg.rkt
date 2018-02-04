@@ -18,6 +18,9 @@
   (and (>= (string-length str) (+ place (string-length contained)))
        (string=? (substring str place (+ place (string-length contained)))
                  contained)))
+(define (char-between? x c1 c2)
+  (and (<= (char->integer c1) (char->integer x))
+       (<= (char->integer x) (char->integer c2))))
 
 ;;;;
 ;; peg s-exp syntax
@@ -25,7 +28,7 @@
 ;; <peg> ::= (epsilon)
 ;;         | (char c) | c
 ;;         | (any-char)
-;;         | (range str)
+;;         | (range c1 c2)
 ;;         | (string str) | str
 ;;         | (and <peg> <peg> ...)
 ;;         | (or <peg> <peg> ...)
@@ -113,8 +116,8 @@
        (single-char-pred #'sk #'x #'(char=? c x))]
       [(any-char)
        (single-char-pred #'sk #'x #t)]
-      [(range str)
-       (single-char-pred #'sk #'x #'(string-contains-char? str x))]
+      [(range c1 c2)
+       (single-char-pred #'sk #'x #'(char-between? x c1 c2))]
       [(string str)
        (with-syntax ([str-len (string-length (syntax->datum #'str))])
          #'(if (string-contains-substring? (pegvm-input-text) (unbox (pegvm-input-position)) str)

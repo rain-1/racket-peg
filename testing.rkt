@@ -9,7 +9,7 @@
 ;; testing it
 
 (define-peg digit (or (char #\0) (call nonzero)))
-(define-peg nonzero (range "123456789"))
+(define-peg nonzero (range #\1 #\9))
 (define-peg number (or (char #\0)
                        (name n (and (call nonzero) (* (call digit)))))
   (if n (string->number n) 0))
@@ -175,11 +175,11 @@ messagebus:x:103:107::/var/run/dbus:/bin/false
 (define-peg cargs (and cLP (* (and (! (and cSP cRP)) carg cSP (or cCOMMA cRP) cSP)) cSP)) ;; !
 (define-peg carg (and cSP ctype cSP cname))
 (define-peg/tag cbody (* cstatement))
-(define-peg cidentifier (and (or (range "abcdefghijklmnopqrstuvwxyz")
-                                 (range "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-                             (* (or (range "abcdefghijklmnopqrstuvwxyz")
-                                    (range "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-                                    (range "0123456789")
+(define-peg cidentifier (and (or (range #\a #\z)
+                                 (range #\A #\Z))
+                             (* (or (range #\a #\z)
+                                    (range #\A #\Z)
+                                    (range #\0 #\9)
                                     #\-))))
 (define-peg cstatement (name res (and (* (and (! #\;) (any-char))) cSC cSP))
   res)
