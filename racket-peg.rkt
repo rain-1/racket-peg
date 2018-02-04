@@ -82,15 +82,16 @@
 
 (define-for-syntax (peg-names exp)
   (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop)
+    [(and e1) (peg-names #'e1)]
     [(and e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
     [(and e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(and e2 . e3)))]
     [(or e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
     [(or e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(or e2 . e3)))]
-    [(* e1) (peg-names #'e1)]
-    [(+ e1) (peg-names #'e1)]
-    [(? e1) (peg-names #'e1)]
+    [(* e1 ...) (peg-names #'(and e1 ...))]
+    [(+ e1 ...) (peg-names #'(and e1 ...))]
+    [(? e1 ...) (peg-names #'(and e1 ...))]
     [(name nm subexp) (cons #'nm (peg-names #'subexp))]
-    [(drop e1) (peg-names #'e1)]
+    [(drop e1 ...) (peg-names #'(and e1 ...))]
     [else '()]))
 
 (define-for-syntax (peg-compile exp sk)
@@ -151,12 +152,18 @@
                                       (s* (peg-result-join res-acc res)))))
                             p))))
              (s* empty-sequence)))]
+      [(* e1 e2 ...)
+       (peg-compile #'(* (and e1 e2 ...)) #'sk)]
       [(+ e)
        (peg-compile #'(and e (* e)) #'sk)]
+      [(+ e1 e2 ...)
+       (peg-compile #'(+ (and e1 e2 ...)) #'sk)]
       [(? e)
        (with-syntax ([p (peg-compile #'e #'sk)])
          #'(begin (pegvm-push-alternative! (lambda () (sk empty-sequence)))
                   p))]
+      [(? e1 e2 ...)
+       (peg-compile #'(? (and e1 e2 ...)) #'sk)]
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)])
          #'(rule sk))]
@@ -178,10 +185,14 @@
              (pegvm-enter-negation!)
              (pegvm-push-alternative! fk)
              p))]
+      [(! e1 e2 ...)
+       (peg-compile #'(! (and e1 e2 ...)) #'sk)]
       [(drop e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (_) (sk empty-sequence))))
              p))]
+      [(drop e1 e2 ...)
+       (peg-compile #'(drop (and e1 e2 ...)) #'sk)]
       [_ (let ((shorthand (syntax-e exp)))
            (cond ((char? shorthand) (peg-compile #`(char #,exp) #'sk))
                  ((string? shorthand) (peg-compile #`(string #,exp) #'sk))
