@@ -2,8 +2,8 @@
 
 (require rackunit)
 
-(require "racket-peg.rkt")
-(require "peg-sequences.rkt")
+(require peg/peg)
+(require peg/peg-result)
 
 ;;;;
 ;; testing it

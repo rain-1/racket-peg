@@ -1,4 +1,4 @@
-#lang reader "peg-lang.rkt"
+#lang peg
 expr <- sum ;
 sum <-- (product ('+' / '-') sum) / product ;
 product <-- (value ('*' / '/') product) / value ;

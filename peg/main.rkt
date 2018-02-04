@@ -1,16 +1,18 @@
 #lang racket
+(module reader racket
+
 (require syntax/strip-context)
 
-(require "racket-peg.rkt")
-(require "peg-sequences.rkt")
-(require "peg-in-peg.rkt")
+(require peg/peg)
+(require peg/peg-result)
+(require peg/peg-in-peg)
 
 (provide (rename-out [literal-read read]
                      [literal-read-syntax read-syntax]))
 
 (define (peg-port->scheme in)
   (peg->scheme (car
-                (peg-result->object (peg (and peg (! (any-char))) (port->string in))))))
+                  (peg-result->object (peg (and peg (! (any-char))) (port->string in))))))
 
 (define (literal-read in)
   (syntax->datum
@@ -21,5 +23,7 @@
     (strip-context
      #'(module anything racket
          (provide (all-defined-out))
-         (require "racket-peg.rkt")
+         (require peg/peg)
          body))))
+
+)

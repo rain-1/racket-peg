@@ -2,6 +2,22 @@
 
 # Questions
 
+## How do I use this?
+
+The subdirectory `peg/` is a racket package that needs to be installed.
+
+```
+raco pkg install --link peg/
+```
+
+Once it is installed you can make use it with `(require peg/peg)`.
+
+You can remove it with:
+
+```
+raco pkg remove peg
+```
+
 ## why does path-element do (define-peg path-element (name res ...) res)?
 
 `(define-peg name p)`

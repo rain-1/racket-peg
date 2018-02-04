@@ -6,8 +6,8 @@
 
 (require (for-syntax racket/syntax))
 
-(require "push-pop-boxes.rkt")
-(require "peg-sequences.rkt")
+(require peg/push-pop-boxes)
+(require peg/peg-result)
 
 ;;;;
 ;; generic utility functions
