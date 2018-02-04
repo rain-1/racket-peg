@@ -5,6 +5,9 @@
 (require "racket-peg.rkt")
 (require "peg-sequences.rkt")
 
+(provide peg-rule:peg
+         peg->scheme)
+
 (define-peg/drop sp (* (or #\space #\tab #\newline)))
 
 ; from http://git.savannah.gnu.org/cgit/guile.git/tree/module/ice-9/peg/string-peg.scm
@@ -35,7 +38,7 @@ RB < ']' ;
 EOF
   )
 
-(define-peg/tag peg (+ peg-rule))
+(define-peg/tag peg (and sp (+ peg-rule)))
 (define-peg/tag peg-rule (and nonterminal (or "<--" "<-" "<") sp pattern ";" sp))
 (define-peg/tag pattern (and alternative (* (drop "/") sp alternative)))
 (define-peg/tag alternative (+ (? #\!) sp suffix))
@@ -107,7 +110,7 @@ cSP < [ \t\n]* ;")
   (match p
     (`(peg . ,rules)
      `(begin . ,(map peg->scheme:peg-rule rules)))
-    (else (error 'peg->scheme "" p))))
+    (else (error 'peg->scheme "~a" p))))
 
 (define (peg->scheme:peg-rule r)
   (match r
@@ -189,5 +192,5 @@ cSP < [ \t\n]* ;")
     (`(ccsingle ,c1) (string->char c1))
     (else (error 'peg->scheme:ccrange "~a" cc))))
 
-(pretty-print
- (peg->scheme (peg peg *guile-peg-tutorial-arith*)))
+;(pretty-print
+; (peg->scheme (peg peg *guile-peg-tutorial-arith*)))
