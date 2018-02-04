@@ -124,6 +124,8 @@
                (begin (pegvm-advance! str-len)
                       (sk (peg-result str)))
                (pegvm-fail)))]
+      [(and e1)
+       (peg-compile #'e1 #'sk)]
       [(and e1 e2)
        (with-syntax ([p1 (peg-compile #'e1 #'mk)]
                      [p2 (peg-compile #'e2 #'sk^)])
@@ -139,6 +141,8 @@
                      [p2 (peg-compile #'e2 #'sk)])
          #'(begin (pegvm-push-alternative! (lambda () p2))
                   p1))]
+      [(or e1)
+       (peg-compile #'e1 #'sk)]
       [(or e1 e2)
        (with-syntax ([p (peg-compile #'($or e1 e2) #'sk)])
          #'(parameterize ([pegvm-current-choice '(or e1 e2)])

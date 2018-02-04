@@ -47,12 +47,13 @@ EOF
                             charclass
                             (and nonterminal (! "<"))))
 (define-peg/tag literal (and (drop "'") (* (and (! "'") (any-char))) (drop "'") sp))
-(define-peg/tag charclass (and "[" (* (or ccrange ccsingle)) "]" sp))
-(define-peg/tag ccrange (and (any-char) "-" (any-char)))
+(define-peg/tag charclass (and (drop "[") (* (or ccrange ccsingle)) (drop "]") sp))
+(define-peg ccrange (and (name c1 (any-char)) "-" (name c2 (any-char)))
+  `(ccrange ,c1 ,c2))
 (define-peg/tag ccsingle (and (! #\]) (any-char)))
-(define-peg nt-char (or (range "abcdefghijklmnopqrstuvwxyz")
-                        (range "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-                        (range "0123456789")
+(define-peg nt-char (or (range #\a #\z)
+                        (range #\A #\Z)
+                        (range #\0 #\9)
                         #\-))
 (define-peg nonterminal (name res (and (+ nt-char) (! nt-char) sp))
   (string->symbol res))
@@ -81,7 +82,7 @@ SLASH < '/' ;
   "expr <- sum ;
 sum <-- (product ('+' / '-') sum) / product ;
 product <-- (value ('*' / '/') product) / value ;
-value <-- !number / '(' expr ')' ;
+value <-- number / '(' expr ')' ;
 number <-- [0-9]+ ;")
 
 
@@ -105,7 +106,7 @@ cSP < [ \t\n]* ;")
 (define (peg->scheme p)
   (match p
     (`(peg . ,rules)
-     (map peg->scheme:peg-rule rules))
+     `(begin . ,(map peg->scheme:peg-rule rules)))
     (else (error 'peg->scheme "" p))))
 
 (define (peg->scheme:peg-rule r)
@@ -171,21 +172,22 @@ cSP < [ \t\n]* ;")
     (`(primary literal . ,str)
      str)
     (`(primary charclass . ,cc)
-     #f)
+     `(or . ,(map peg->scheme:ccrange cc)))
     (`(primary ,nonterm)
      `(call ,nonterm))
     (else
      (error 'peg->scheme:primary "~a" pr))))
 
+(define (string->char str)
+  (unless (and (string? str) (= 1 (string-length str)))
+    (error 'string->char "~a" str))
+  (string-ref str 0))
+
+(define (peg->scheme:ccrange cc)
+  (match cc
+    (`(ccrange ,c1 ,c2) `(range ,(string->char c1) ,(string->char c2)))
+    (`(ccsingle ,c1) (string->char c1))
+    (else (error 'peg->scheme:ccrange "~a" cc))))
+
 (pretty-print
  (peg->scheme (peg peg *guile-peg-tutorial-arith*)))
-
-'((define-peg expr (call sum))
-  (define-peg/tag
-   sum
-   (or (and (call product) (or "+" "-") (call sum)) (call product)))
-  (define-peg/tag
-   product
-   (or (and (call value) (or "*" "/") (call product)) (call value)))
-  (define-peg/tag value (or (! (call number)) (and "(" (call expr) ")")))
-  (define-peg/tag number (+ #f)))
