@@ -88,8 +88,7 @@
     [(and e1) (peg-names #'e1)]
     [(and e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
     [(and e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(and e2 . e3)))]
-    [(or e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
-    [(or e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(or e2 . e3)))]
+    [(or e1 ...) (peg-names #'(and e1 ...))]
     [(* e1 ...) (peg-names #'(and e1 ...))]
     [(+ e1 ...) (peg-names #'(and e1 ...))]
     [(? e1 ...) (peg-names #'(and e1 ...))]
@@ -181,6 +180,11 @@
                           (set! nm (peg-result->object r)))
                         (sk r))))
              p))]
+;      [(transform e code)
+;       (with-syntax ([p (peg-compile #'e #'sk^)])
+;         #'(let ((sk^ (lambda (r)
+;                        (sk code))))
+;             p))]
       [(! e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (_)
@@ -285,5 +289,3 @@
                         [pegvm-negation? (box 0)]
                         [pegvm-best-failure (box #f)])
            (peg-rule:local success-cont)))]))
-
-
