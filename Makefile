@@ -9,6 +9,7 @@ test:
 	racket examples/docs-example-1.rkt
 	racket examples/docs-example-2.rkt
 	racket examples/docs-example-3.rkt
+
 	racket examples/test-multibrack.rkt
 	racket examples/test-regex-range.rkt
 	racket examples/test-etc-passwd.rkt
@@ -16,6 +17,8 @@ test:
 	racket examples/test-blg.rkt
 	racket examples/test-tiny.rkt
 	racket examples/test-json.rkt
+
+	racket examples/peg-test-expr.rkt
 
 doc:
 	 scribble --dest docs/ docs/peg.scrbl
