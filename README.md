@@ -10,7 +10,7 @@ Run `make test` to check that it is working after installation.
 
 ## Source Code Map
 
-* `peg/peg.rkt` - The main source file, implementing the PEG language and VM.
-* `peg/peg-result.rkt` - machinary for peg results, automatically joining sequences.
-* `peg/peg-in-peg.rkt` - defines a special syntax for PEG, using peg itself.
-* `peg/main.rkt` - implements the #lang peg glue based on the peg-in-peg parser.
+* `peg.rkt` - The main source file, implementing the PEG language and VM.
+* `peg-result.rkt` - machinary for peg results, automatically joining sequences.
+* `peg-in-peg.rkt` - defines a special syntax for PEG, using peg itself.
+* `main.rkt` - implements the #lang peg glue based on the peg-in-peg parser.

@@ -1,26 +1,26 @@
-.PHONY: install test doc
+.PHONY: install test docs
 
 all:
-	echo targets are install test and doc
+	echo targets are install test and docs
 
 install:
 	raco pkg remove peg || true
-	raco pkg install --link peg/
+	raco pkg install --link
 
 test:
-	racket test/docs-example-1.rkt
-	racket test/docs-example-2.rkt
-	racket test/docs-example-3.rkt
+	racket tests/docs-example-1.rkt
+	racket tests/docs-example-2.rkt
+	racket tests/docs-example-3.rkt
 
-	racket test/test-multibrack.rkt
-	racket test/test-regex-range.rkt
-	racket test/test-etc-passwd.rkt
-	racket test/test-cfunc.rkt
-	racket test/test-blg.rkt
-	racket test/test-tiny.rkt
-	racket test/test-json.rkt
+	racket tests/test-multibrack.rkt
+	racket tests/test-regex-range.rkt
+	racket tests/test-etc-passwd.rkt
+	racket tests/test-cfunc.rkt
+	racket tests/test-blg.rkt
+	racket tests/test-tiny.rkt
+	racket tests/test-json.rkt
 
-	racket test/peg-test-expr.rkt
+	racket tests/peg-test-expr.rkt
 
-doc:
-	 scribble --dest docs/ docs/peg.scrbl
+docs:
+	 scribble --dest scribblings/ scribblings/peg.scrbl
