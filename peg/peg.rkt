@@ -197,7 +197,7 @@
              (pegvm-push-alternative! fk)
              p))]
       [(! e1 e2 ...)
-       (peg-compile #'(! (and e1 e2 ...)) #'sk)]
+       (peg-compile #'(and (! e1) (! e2) ...) #'sk)]
       [(drop e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (_) (sk empty-sequence))))
@@ -276,11 +276,7 @@
                                  (car (unbox (pegvm-best-failure)))
                                  (caddr (unbox (pegvm-best-failure)))
                                  )))
-             (success-cont (lambda (res)
-                             (display "parse successful! ")
-                             (write (peg-result->object res))
-                             (newline)
-                             res)))
+             (success-cont peg-result->object))
          (define-peg local exp)
          (parameterize ([pegvm-input-text str]
                         [pegvm-input-position (box 0)]
