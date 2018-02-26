@@ -31,7 +31,11 @@
                             charclass
                             (and nonterminal (! "<"))))
 (define-peg/tag literal (and (drop "'") (* (and (! "'") (any-char))) (drop "'") sp))
-(define-peg/tag charclass (and (drop "[") (* (or ccrange ccsingle ccescape)) (drop "]") sp))
+(define-peg/tag charclass
+  (and (drop "[")
+       (or "^" (! "^"))
+       (* (or ccrange ccsingle ccescape))
+       (drop "]") sp))
 (define-peg ccrange (and (name c1 (any-char)) "-" (name c2 (any-char)))
   `(ccrange ,c1 ,c2))
 (define-peg/tag ccsingle (and (! #\] #\\) (any-char)))
@@ -116,6 +120,9 @@
      `(call ,nonterm))
     (`(primary literal . ,str)
      str)
+    (`(primary charclass "^" . ,cc)
+     `(and (! (or . ,(map peg->scheme:ccrange cc)))
+           (any-char)))
     (`(primary charclass . ,cc)
      `(or . ,(map peg->scheme:ccrange cc)))
     (else
