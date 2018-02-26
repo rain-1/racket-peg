@@ -1,6 +1,7 @@
 #lang racket
 
 (require rackunit)
+(require racket/trace)
 
 (require peg/peg)
 (require peg/peg-result)
@@ -30,10 +31,11 @@
                             charclass
                             (and nonterminal (! "<"))))
 (define-peg/tag literal (and (drop "'") (* (and (! "'") (any-char))) (drop "'") sp))
-(define-peg/tag charclass (and (drop "[") (* (or ccrange ccsingle)) (drop "]") sp))
+(define-peg/tag charclass (and (drop "[") (* (or ccrange ccsingle ccescape)) (drop "]") sp))
 (define-peg ccrange (and (name c1 (any-char)) "-" (name c2 (any-char)))
   `(ccrange ,c1 ,c2))
-(define-peg/tag ccsingle (and (! #\]) (any-char)))
+(define-peg/tag ccsingle (and (! #\] #\\) (any-char)))
+(define-peg/tag ccescape (and (drop #\\) (any-char)))
 (define-peg nt-char (or (range #\a #\z)
                         (range #\A #\Z)
                         (range #\0 #\9)
@@ -108,14 +110,14 @@
   (match pr
     (`(primary "(" ,pat ")")
      (peg->scheme:pattern pat))
-    (`(primary ".")
+    (`(primary . ".")
      '(any-char))
+    (`(primary ,nonterm)
+     `(call ,nonterm))
     (`(primary literal . ,str)
      str)
     (`(primary charclass . ,cc)
      `(or . ,(map peg->scheme:ccrange cc)))
-    (`(primary ,nonterm)
-     `(call ,nonterm))
     (else
      (error 'peg->scheme:primary "~a" pr))))
 
@@ -127,5 +129,11 @@
 (define (peg->scheme:ccrange cc)
   (match cc
     (`(ccrange ,c1 ,c2) `(range ,(string->char c1) ,(string->char c2)))
-    (`(ccsingle ,c1) (string->char c1))
+    (`(ccsingle . ,c1) (string->char c1))
+    (`(ccescape . ,c1)
+     (case (string->char c1)
+       ((#\n) #\newline)
+       ((#\t) #\tab)
+       ((#\\) #\\)
+       (else (error 'peg->scheme:ccrange "escaping a character that need not be escaped: ~a" cc))))
     (else (error 'peg->scheme:ccrange "~a" cc))))
