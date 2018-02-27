@@ -5,7 +5,8 @@
 
 (require peg/peg)
 (require peg/peg-result)
-(require peg/peg-in-peg)
+(require peg/peg-in-peg-expanded)
+(require peg/peg-to-scheme)
 
 (provide (rename-out [literal-read read]
                      [literal-read-syntax read-syntax]))

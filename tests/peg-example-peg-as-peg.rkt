@@ -9,7 +9,7 @@ literal <-- ['] (!['] .)* ['] sp ;
 charclass <-- LB (!']' (CCrange / CCsingle))* RB sp ;
 CCrange <-- . '-' . ;
 CCsingle <-- !']' . ;
-ntchar <- [a-zA-Z0-9-] ;
+ntchar <- [a-zA-Z0-9\-] ;
 nonterminal <-- ntchar+ !ntchar sp ;
 sp < [ \t\n]* ;
 SLASH < '/' ;

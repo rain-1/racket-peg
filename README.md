@@ -12,5 +12,8 @@ Run `make test` to check that it is working after installation.
 
 * `peg.rkt` - The main source file, implementing the PEG language and VM.
 * `peg-result.rkt` - machinary for peg results, automatically joining sequences.
-* `peg-in-peg.rkt` - defines a special syntax for PEG, using peg itself.
-* `main.rkt` - implements the #lang peg glue based on the peg-in-peg parser.
+* `peg-in-peg.rkt` - Implements the standard PEG syntax.
+* `peg-in-peg-expanded.rkt` - An expanded version of peg-in-peg.
+* `peg-to-scheme.rkt` - translates a parsed AST from the PEG grammar parser to an scheme PEG parser.
+* `main.rkt` - implements the `#lang peg` glue based on the peg-in-peg parser.
+
