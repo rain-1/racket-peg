@@ -5,6 +5,7 @@ This library implements a PEG parser generator.
 ## Getting Started
 
 Run `make install` to install the peg library. You should be able to `(require peg/peg)` in your own racket programs after that.
+If there is a problem installing  with raco pkg, you may be able to just copy the repo to `/usr/share/racket/collect/peg`. This is not recommended but it is a workaround.
 
 Run `make test` to check that it is working after installation.
 
