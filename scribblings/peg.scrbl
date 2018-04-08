@@ -1,5 +1,6 @@
 #lang scribble/manual
- 
+@(require scribble/bnf)
+
 @title{PEG}
 
 This library implements a PEG parser generator.
@@ -138,3 +139,36 @@ Usage:
 > (peg sexp "(lambda (x) (list x (list (quote quote) x)))")
 '(lambda (x) (list x (list 'quote x)))
 }
+
+@section{PEG Syntax}
+
+This package also provides a @racket{#lang peg} alternative, to allow you to make parsers in a more standard PEG syntax.
+
+@subsection{PEG Syntax Reference}
+
+  @(let ([open @litchar{(}]
+         [close @litchar{)}]
+         [dot @litchar{.}]
+         [slash @litchar{/}]
+         [semi @litchar{;}]
+         [arr1 @litchar{<}]
+         [arr2 @litchar{<-}]
+         [arr3 @litchar{<--}]
+         )
+     @BNF[(list @nonterm{peg}
+                @kleeneplus[@nonterm{grammar}])
+          (list @nonterm{grammar}
+                @BNF-seq[@nonterm{nonterminal} @BNF-group[@BNF-alt[arr1 arr2 arr3]] @nonterm{pattern} semi])
+          (list @nonterm{pattern}
+                @nonterm{alternative} @kleenestar[@BNF-group[slash @nonterm{alternative}]])
+          (list @nonterm{alternative}
+                @kleeneplus{@nonterm{expression}})
+          (list @nonterm{expression}
+                @nonterm{primary})
+          (list @nonterm{primary}
+                @BNF-seq{@litchar{(} @nonterm{pattern} @litchar{)}}
+                dot
+                @nonterm{literal}
+                @nonterm{charclass}
+                @nonterm{nonterminal})])
+

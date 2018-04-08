@@ -11,21 +11,21 @@
 (define-peg number (name res (+ (range #\0 #\9)))
  (string->number res))
 (define-peg symbol
-  (and (name res (+ (and (! #\( #\) #\space #\newline) (any-char)))) _)
+  (and (name res (+ (and (! #\( #\) #\space #\newline #\;) (any-char)))) _)
   (string->symbol res))
 
 (define-peg/bake tiny (and cmd-seq (! (any-char))))
-(define-peg cmd-seq (and cmd semicolon (* (and cmd semicolon))))
+(define-peg cmd-seq (+ (and cmd semicolon)))
 (define-peg cmd (or if-cmd
                     repeat-cmd
-                    assign-cmd
                     read-cmd
-                    write-cmd))
+                    write-cmd
+                    assign-cmd))
 (define-peg/tag if-cmd (and "IF" _ number "THEN" _ cmd-seq (? (and "ELSE" _ cmd-seq)) "END" _))
 (define-peg/tag repeat-cmd (and "REPEAT" _ cmd-seq "UNTIL" _ number))
-(define-peg/tag assign-cmd (and symbol _ ":=" _ number))
 (define-peg/tag read-cmd (and "READ" _ symbol))
 (define-peg/tag write-cmd (and "WRITE" _ symbol))
+(define-peg/tag assign-cmd (and symbol _ ":=" _ number))
 (define-peg/drop semicolon (and #\; _))
 
 (define *tiny-example*

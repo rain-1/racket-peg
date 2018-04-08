@@ -128,13 +128,17 @@
       [(and e1 e2)
        (with-syntax ([p1 (peg-compile #'e1 #'mk)]
                      [p2 (peg-compile #'e2 #'sk^)])
-         #'(let ((mk (lambda (r1)
-                       (let ((sk^ (lambda (r2)
-                                    (sk (peg-result-join r1 r2)))))
-                         p2))))
-             p1))]
+         #'(let ((stack-reset (unbox (pegvm-control-stack))))
+             (let ((mk (lambda (r1)
+                         (let ((sk^ (lambda (r2)
+                                      (sk (peg-result-join r1 r2)))))
+                           (set-box! (pegvm-control-stack) stack-reset)
+                           p2))))
+               p1)))]
       [(and e1 e2 e3 ...)
        (peg-compile #'(and e1 (and e2 e3 ...)) #'sk)]
+;      [(and e1 e2 e3 ...)
+;       (peg-compile #'(and (and e1 e2) e3 ...) #'sk)]
       [($or e1 e2)
        (with-syntax ([p1 (peg-compile #'e1 #'sk)]
                      [p2 (peg-compile #'e2 #'sk)])

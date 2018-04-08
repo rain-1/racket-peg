@@ -10,7 +10,7 @@
   (and (name c1 (any-char)) #\- (name c2 (any-char)))
   `(range ,c1 ,c2))
 (define-peg regex-range-single
-  (name c1 (and (! #\-) (any-char)))
+  (name c1 (and (! #\]) (any-char)))
   `(single ,c1))
 
 (check-equal? (peg regex-range "[a-zA-Z0-9_]")
