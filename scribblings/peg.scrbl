@@ -146,29 +146,34 @@ This package also provides a @racket{#lang peg} alternative, to allow you to mak
 
 @subsection{PEG Syntax Reference}
 
-  @(let ([open @litchar{(}]
-         [close @litchar{)}]
-         [dot @litchar{.}]
-         [slash @litchar{/}]
-         [semi @litchar{;}]
-         [arr1 @litchar{<}]
-         [arr2 @litchar{<-}]
-         [arr3 @litchar{<--}]
-         )
-     @BNF[(list @nonterm{peg}
-                @kleeneplus[@nonterm{grammar}])
-          (list @nonterm{grammar}
-                @BNF-seq[@nonterm{nonterminal} @BNF-group[@BNF-alt[arr1 arr2 arr3]] @nonterm{pattern} semi])
-          (list @nonterm{pattern}
-                @nonterm{alternative} @kleenestar[@BNF-group[slash @nonterm{alternative}]])
-          (list @nonterm{alternative}
-                @kleeneplus{@nonterm{expression}})
-          (list @nonterm{expression}
-                @nonterm{primary})
-          (list @nonterm{primary}
-                @BNF-seq{@litchar{(} @nonterm{pattern} @litchar{)}}
-                dot
-                @nonterm{literal}
-                @nonterm{charclass}
-                @nonterm{nonterminal})])
+The best way to understand the PEG syntax would be by reference to examples, there are many simple examples in the racket peg repo and the follow is the actual grammar used by racket-peg to implemet the peg lang:
 
+@verbatim{
+#lang peg
+
+nt-char <- [a-zA-Z0-9_\-] ;
+nonterminal <-- nt-char+ !nt-char SP ;
+SP < [ \t\n]* ;
+
+literal <-- SQ (BS ['\\] / !['\\] .)* SQ SP ;
+SQ < ['] ;
+BS < [\\] ;
+
+charclass <-- LB '^'? (cc-range / cc-escape / cc-single)+ RB SP ;
+cc-range <-- cc-char DASH cc-char ;
+cc-escape <-- BS . ;
+cc-single <-- cc-char ;
+cc-char <- !cc-escape-char . ;
+cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't' ;
+LB < '[' ;
+RB < ']' ;
+DASH < '-' ;
+
+peg <-- SP grammar+ ;
+grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ';' SP ;
+pattern <-- alternative (SLASH SP alternative)* ;
+alternative <-- expression+ ;
+expression <-- [!]? SP primary ([*+?] SP)? ;
+primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
+SLASH < '/' ;
+}
