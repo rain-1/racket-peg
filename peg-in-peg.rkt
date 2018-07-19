@@ -2,7 +2,8 @@
 
 nt-char <- [a-zA-Z0-9_\-] ;
 nonterminal <-- nt-char+ !nt-char SP ;
-SP < [ \t\n]* ;
+SP < (comment / [ \t\n])* ;
+comment < '//' [^\n]* ;
 
 literal <-- SQ (BS ['\\] / !['\\] .)* SQ SP ;
 SQ < ['] ;
@@ -25,4 +26,3 @@ alternative <-- expression+ ;
 expression <-- [!]? SP primary ([*+?] SP)? ;
 primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
 SLASH < '/' ;
-
