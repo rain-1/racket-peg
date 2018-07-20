@@ -5,7 +5,7 @@
 //we use '<' to mean that the matching string of input is discarted on parser
 _ < (' ' / [\t] / [\n])* ;
 
-digit <-- [0-9] ;
+digit <- [0-9] ;
 number <-- digit+ ; // we can comment on the end of a rule. We can use this to explain that a number is just
                     // a bunch of digits concatenated(minimun of 1 digit)
                     
