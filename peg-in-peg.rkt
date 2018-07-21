@@ -3,7 +3,7 @@
 nt-char <- [a-zA-Z0-9_\-] ;
 nonterminal <-- nt-char+ !nt-char SP ;
 SP < (comment / [ \t\n])* ;
-comment < '//' [^\n]* ;
+comment < '//' [^\n]* [\n] ;
 
 literal <-- SQ (BS ['\\] / !['\\] .)* SQ SP ;
 SQ < ['] ;
