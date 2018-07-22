@@ -209,7 +209,7 @@
              p))]
       [(drop e1 e2 ...)
        (peg-compile #'(drop (and e1 e2 ...)) #'sk)]
-      [(& e) (peg-compile #'(! (! e)))]
+      [(& e) (peg-compile #'(! (! e)) #'sk)]
       [_ (let ((shorthand (syntax-e exp)))
            (cond ((char? shorthand) (peg-compile #`(char #,exp) #'sk))
                  ((string? shorthand) (peg-compile #`(string #,exp) #'sk))
