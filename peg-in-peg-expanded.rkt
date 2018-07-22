@@ -29,7 +29,7 @@
 (define-peg/tag grammar (and (and nonterminal (or "<--" "<-" "<") SP pattern) ";" SP))
 (define-peg/tag pattern (and alternative (* (and SLASH SP alternative))))
 (define-peg/tag alternative (+ expression))
-(define-peg/tag expression (and (? #\!) SP primary (? (and (or #\* #\+ #\?) SP))))
+(define-peg/tag expression (and (? (or #\! #\&)) SP primary (? (and (or #\* #\+ #\?) SP))))
 (define-peg/tag primary
   (or (and "(" SP pattern ")" SP)
       (and "." SP)
