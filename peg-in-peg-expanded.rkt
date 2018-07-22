@@ -5,7 +5,7 @@
 (define-peg nt-char (or (range #\a #\z) (range #\A #\Z) (range #\0 #\9) #\_ #\-))
 (define-peg/tag nonterminal (and (+ nt-char) (! nt-char) SP))
 (define-peg/drop SP (* (or comment (or #\space #\tab #\newline))))
-(define-peg/drop comment (and "//" (* (and (! #\newline) (any-char))) #\newline))
+(define-peg/drop comment (and "//" (* (and (! #\newline) (any-char)))))
 
 (define-peg/tag literal
   (and SQ
