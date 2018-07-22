@@ -56,6 +56,11 @@
     (else (error 'peg->scheme:alternative "~s" p))))
 
 (define (peg->scheme:expression p)
+  (define (prefix-op? extra)
+    (case extra
+      (("!") '!)
+      (("&") '&)
+      (else (error 'peg->scheme:expression "invalid prefix op" extra))))
   (define (op? extra)
     (case extra
       (("*") '*)
@@ -63,18 +68,18 @@
       (("?") '?)
       (else (error 'peg->scheme:expression "invalid op" extra))))
   (define (go negate? prim extra?)
-    ((lambda (x) (if negate? `(! ,x) x))
+    ((lambda (x) (if negate? `(,negate? ,x) x))
      ((lambda (x) (if extra? `(,extra? ,x) x))
       prim)))
   (match p
     (`(expression ,prim)
      (go #f (peg->scheme:primary prim) #f))
-    (`(expression "!" ,prim)
-     (go #t (peg->scheme:primary prim) #f))
+    (`(expression ,p-op ,prim) #:when (string? p-op)
+     (go (prefix-op? p-op) (peg->scheme:primary prim) #f))
     (`(expression ,prim ,extra)
      (go #f (peg->scheme:primary prim) (op? extra)))
-    (`(expression "!" ,prim ,extra)
-     (go #t (peg->scheme:primary prim) (op? extra)))
+    (`(expression ,p-op ,prim ,extra) #:when (string? p-op)
+     (go (prefix-op? p-op) (peg->scheme:primary prim) (op? extra)))
     (else (error 'peg->scheme:expression "~s" p))))
 
 (define (peg->scheme:primary p)
