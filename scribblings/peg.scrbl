@@ -32,6 +32,7 @@ The generated code parses text by interacting with the "PEG VM", which is a set 
      	      (code:line (call name))
      	      (code:line (capture name <rule>))
      	      (code:line (! <rule> ...) (code:comment "negative lookahead"))
+	      (code:line (& <rule>) (code:comment "positive lookahead"))
      	      (code:line (drop <rule> ...) (code:comment "discard the semantic result on matching"))
 	      ])]{
 Defines a new scheme function named @racket[peg-rule:name] by compiling the peg rule into scheme code that interacts with the PEG VM.
@@ -154,7 +155,7 @@ The best way to understand the PEG syntax would be by reference to examples, the
 nt-char <- [a-zA-Z0-9_\-] ;
 nonterminal <-- nt-char+ !nt-char SP ;
 SP < (comment / [ \t\n])* ;
-comment < '//' [^\n]* [\n] ;
+comment < '//' [^\n]* ;
 
 literal <-- SQ (BS ['\\] / !['\\] .)* SQ SP ;
 SQ < ['] ;
@@ -174,7 +175,7 @@ peg <-- SP grammar+ ;
 grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ';' SP ;
 pattern <-- alternative (SLASH SP alternative)* ;
 alternative <-- expression+ ;
-expression <-- [!]? SP primary ([*+?] SP)? ;
+expression <-- [!&]? SP primary ([*+?] SP)? ;
 primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
 SLASH < '/' ;
 }
