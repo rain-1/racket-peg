@@ -18,3 +18,6 @@ Run `make test` to check that it is working after installation.
 * `peg-to-scheme.rkt` - translates a parsed AST from the PEG grammar parser to an scheme PEG parser.
 * `main.rkt` - implements the `#lang peg` glue based on the peg-in-peg parser.
 
+## Authors
+
+* Raymond Nicholson
