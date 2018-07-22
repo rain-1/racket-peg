@@ -38,6 +38,7 @@
 ;;         | (call nm) | nm
 ;;         | (name nm <peg>)
 ;;         | (! <peg>)
+;;         | (& <peg>)
 ;;         | (drop <peg>)
 
 
