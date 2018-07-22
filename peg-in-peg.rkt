@@ -13,7 +13,7 @@ charclass <-- LB '^'? (cc-range / cc-escape / cc-single)+ RB SP ;
 cc-range <-- cc-char DASH cc-char ;
 cc-escape <-- BS . ;
 cc-single <-- cc-char ;
-cc-char <- !cc-escape-char . ;
+cc-char <- !cc-escape-char . / 'n' / 't' ;
 cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't' ;
 LB < '[' ;
 RB < ']' ;

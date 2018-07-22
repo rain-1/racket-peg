@@ -19,7 +19,7 @@
 (define-peg/tag cc-range (and cc-char DASH cc-char))
 (define-peg/tag cc-escape (and BS (any-char)))
 (define-peg/tag cc-single cc-char)
-(define-peg cc-char (and (! cc-escape-char) (any-char)))
+(define-peg cc-char (or (and (! cc-escape-char) (any-char)) "n" "t"))
 (define-peg cc-escape-char (or "[" "]" "-" "^" "\\" "n" "t"))
 (define-peg/drop LB "[")
 (define-peg/drop RB "]")
