@@ -2,7 +2,7 @@
 
 (require rackunit)
 
-(require peg/peg)
+(require peg)
 (require peg/peg-result)
 
 ;;; Tiny

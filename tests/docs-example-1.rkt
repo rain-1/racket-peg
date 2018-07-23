@@ -1,6 +1,6 @@
 #lang racket
 
-(require peg/peg)
+(require peg)
 (require rackunit)
 
 (define *sentence* "the quick brown fox jumps over the lazy dog")

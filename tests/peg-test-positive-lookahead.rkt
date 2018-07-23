@@ -1,6 +1,6 @@
 #lang racket
 
-(require peg/peg)
+(require peg)
 (require rackunit)
 
 (require "peg-example-positive-lookahead.rkt")

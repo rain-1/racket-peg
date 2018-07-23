@@ -1,7 +1,7 @@
 #lang racket
 
 (require rackunit)
-(require peg/peg)
+(require peg)
 
 ;; https://www.gnu.org/software/guile/manual/html_node/PEG-Tutorial.html#PEG-Tutorial
 

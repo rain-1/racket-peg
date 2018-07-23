@@ -1,7 +1,7 @@
 #lang racket
 
 (require rackunit)
-(require peg/peg)
+(require peg)
 
 (require "peg-example-guile-passwd.rkt")
 

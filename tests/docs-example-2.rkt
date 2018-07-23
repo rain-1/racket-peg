@@ -1,7 +1,7 @@
 #lang racket
 
 (require rackunit)
-(require peg/peg)
+(require peg)
 
 (define-peg number (name res (+ (range #\0 #\9)))
   (string->number res))
