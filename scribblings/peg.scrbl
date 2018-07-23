@@ -75,7 +75,7 @@ Run a PEG parser. Attempt to parse the @racket[input-text] string using the give
 For a simple example, lets try splitting a sentence into words. We can describe a word as one or more of non-space characters, optionally followed by a space:
 
 @codeblock{
-> (require peg/peg)
+> (require peg)
 > (define *sentence* "the quick brown fox jumps over the lazy dog")
 > (define-peg non-space
     (and (! #\space) (any-char)))
