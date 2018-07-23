@@ -1,4 +1,6 @@
 #lang racket
+(require peg/peg)
+(provide (all-from-out peg/peg))
 (module reader racket
 
 (require syntax/strip-context)
