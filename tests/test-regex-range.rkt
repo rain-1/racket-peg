@@ -1,7 +1,7 @@
 #lang racket
 
 (require rackunit)
-(require peg/peg)
+(require peg)
 
 (define-peg regex-range
   (and #\[ (? (name neg #\^)) (name res (* (or regex-range-range regex-range-single))) #\])

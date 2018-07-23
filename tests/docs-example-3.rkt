@@ -1,7 +1,7 @@
 #lang racket
 
 (require rackunit)
-(require peg/peg)
+(require peg)
 
 (define-peg _ (* (or #\space #\newline)))
 
