@@ -240,7 +240,7 @@
   (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) res)]))
 
 (define-syntax (define-peg/tag stx)
-  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) `(rule-name . ,res))]))
+  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) (cons 'rule-name res))]))
 
 (define (copy-and-pad-substring str a b)
   ;; pad with spaces
