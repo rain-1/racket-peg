@@ -38,6 +38,8 @@
       (("<--") 'define-peg/tag)
       (else (error 'peg->scheme:grammar "~s" op))))
   (match p
+    (`(import "import" (nonterminal . ,nt) ";")
+     `(require ,nt))
     (`(grammar (nonterminal . ,nt) ,op ,pat ";")
      (let ((op^ (op? op)))
        `(,op^ ,(string->symbol nt) ,(peg->scheme:pattern pat))))
