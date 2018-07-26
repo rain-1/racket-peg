@@ -24,11 +24,25 @@
     (error 'string->char "~a" str))
   (string-ref str 0))
 
+(define (semantic? l)
+  (and (pair? l)
+       (equal? (car l) 'semantic)))
+
+(define (grammar? l)
+  (and (pair? l)
+       (equal? (car l) 'grammar)))
+
+
 (define (peg->scheme p)
   (match p
-    (`(peg . ,grammars)
-     `(begin . ,(map peg->scheme:grammar grammars)))
+    (`(peg ,(? semantic? a) ... ,(? grammar? b) ...)
+     `(begin ,@(map peg->acheme:semantic a) ,@(map peg->scheme:grammar b)))
     (else (error 'peg->scheme "~s" p))))
+
+(define (peg->scheme:semantic a)
+  (match a
+    (`(semantic ,literal) `(require ,literal))))
+
 
 (define (peg->scheme:grammar p)
   (define (op? op)

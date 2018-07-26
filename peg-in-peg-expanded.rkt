@@ -25,15 +25,24 @@
 (define-peg/drop RB "]")
 (define-peg/drop DASH "-")
 
-(define-peg/tag peg (and SP (+ grammar)))
-(define-peg/tag grammar (and (and nonterminal (or "<--" "<-" "<") SP pattern) ";" SP))
-(define-peg/tag pattern (and alternative (* (and SLASH SP alternative))))
-(define-peg/tag alternative (+ expression))
-(define-peg/tag expression (and (? (or #\! #\&)) SP primary (? (and (or #\* #\+ #\?) SP))))
-(define-peg/tag primary
-  (or (and "(" SP pattern ")" SP)
-      (and "." SP)
-      literal
-      charclass
-      nonterminal))
-(define-peg/drop SLASH "/")
+(define-peg/tag peg (and SP (* semantic) SP (+ grammar)))
+    (define-peg/tag
+     grammar
+     (and (and nonterminal (or "<--" "<-" "<") SP pattern) ";" SP))
+    (define-peg/tag
+     pattern
+     (and alternative (* (and SLASH SP alternative))))
+    (define-peg/tag alternative (+ expression))
+    (define-peg/tag
+     expression
+     (and (? (or #\! #\&)) SP primary (? (and (or #\* #\+ #\?) SP))))
+    (define-peg/tag
+     primary
+     (or (and "(" SP pattern ")" SP)
+         (and "." SP)
+         literal
+         charclass
+         nonterminal))
+    (define-peg/drop SLASH "/")
+    (define-peg/drop SEMANTIC "semantic")
+    (define-peg/tag semantic (and SEMANTIC SP literal SP ";" SP))))

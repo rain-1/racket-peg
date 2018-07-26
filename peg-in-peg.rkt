@@ -19,10 +19,18 @@ LB < '[' ;
 RB < ']' ;
 DASH < '-' ;
 
-peg <-- SP grammar+ ;
+peg <-- SP semantic* SP grammar+ ;
 grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ';' SP ;
 pattern <-- alternative (SLASH SP alternative)* ;
 alternative <-- expression+ ;
 expression <-- [!&]? SP primary ([*+?] SP)? ;
 primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
 SLASH < '/' ;
+
+SEMANTIC < 'semantic' ;
+semantic <-- SEMANTIC SP literal SP ';' SP;
+
+
+
+
+
