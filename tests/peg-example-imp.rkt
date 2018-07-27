@@ -15,7 +15,7 @@ import peg-example-expr.rkt ;
 
 program <-- _ 'module' _ identifier _ clauses _ procs _ 'end' _ EOI ;
 _ < [ \t\n]* ;
-identifier <- [a-zA-Z]+ ;
+identifier <-- [a-zA-Z]+ ;
 clauses <-- vars? _ const? _ init? ;
 vars <-- 'var' _ identifier _ (',' _ identifier _)* ';' ;
 const <-- 'const' _ identifier _ (',' _ identifier _)* ';' ;
