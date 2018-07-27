@@ -1,3 +1,5 @@
+#lang racket
+
 (require peg)
 (require rackunit)
 
