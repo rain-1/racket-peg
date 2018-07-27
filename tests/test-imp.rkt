@@ -20,26 +20,24 @@
 
 
   end")
-  ''(program
-  "moduletest"
+  '(program
+  "module"
+  (identifier . "test")
   (clauses
-   (vars . "varx,y,z;")
-   (const . "constw,h,j;")
+   (vars "var" (identifier . "x") "," (identifier . "y") "," (identifier . "z") ";")
+   (const "const" (identifier . "w") "," (identifier . "h") "," (identifier . "j") ";")
    (init "init"
-         (initialization "x=" (sum product value number . "0"))
+         (initialization (identifier . "x") "=" (sum product value number . "0"))
          ","
-         (initialization "y=" (sum product value number . "1"))
+         (initialization (identifier . "y") "=" (sum product value number . "1"))
          ","
-         (initialization "z=" (sum product value number . "4"))
+         (initialization (identifier . "z") "=" (sum product value number . "4"))
          ","
-         (initialization "w=" (sum product value number . "10"))
+         (initialization (identifier . "w") "=" (sum product value number . "10"))
          ","
-         (initialization "h=" (sum product value number . "15"))
+         (initialization (identifier . "h") "=" (sum product value number . "15"))
          ","
-         (initialization "j=" (sum product value number . "100"))
+         (initialization (identifier . "j") "=" (sum product value number . "100"))
          ";"))
-  (procs (proc "procmain" (block "{" (clauses) (command unitary-command print "print" (sum product value number . "15") ";") "}")))
+  (procs (proc "proc" (identifier . "main") (block "{" (clauses) (command unitary-command print "print" (sum product value number . "15") ";") "}")))
   "end"))
-  
-  //we can match correct programs, but obvialy the struct is ugly yet
-
