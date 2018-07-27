@@ -1,7 +1,7 @@
 #lang peg
 
 nt-char <- [a-zA-Z0-9_\-] ;
-nonterminal <-- nt-char+ !nt-char SP ;
+nonterminal <-- nt-char (nt-char / [./])* !nt-char SP ;
 SP < (comment / [ \t\n])* ;
 comment < '//' [^\n]* ;
 
@@ -19,7 +19,8 @@ LB < '[' ;
 RB < ']' ;
 DASH < '-' ;
 
-peg <-- SP grammar+ ;
+peg <-- SP import* grammar+ ;
+import <-- 'import' SP nonterminal ';' SP ;
 grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ';' SP ;
 pattern <-- alternative (SLASH SP alternative)* ;
 alternative <-- expression+ ;
