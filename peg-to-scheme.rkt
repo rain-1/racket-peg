@@ -62,6 +62,7 @@
     (case extra
       (("!") '!)
       (("&") '&)
+      (("~") 'drop)
       (else (error 'peg->scheme:expression "invalid prefix op" extra))))
   (define (op? extra)
     (case extra
