@@ -175,7 +175,13 @@ peg <-- SP grammar+ ;
 grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ';' SP ;
 pattern <-- alternative (SLASH SP alternative)* ;
 alternative <-- expression+ ;
-expression <-- [!&]? SP primary ([*+?] SP)? ;
+expression <-- [!&~]? SP primary ([*+?] SP)? ; //yes, we can use one-line comments
+//the ! above is the negative lookahead operator
+//the & above is the positibe lookahead operator
+
+//the ~ above is the drop operator. He discard the semantic value of the expression
+//immediately on their right, is cool to use to discard garbage in the input, like commas,
+//spaces, things like this
 primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
 SLASH < '/' ;
 }
