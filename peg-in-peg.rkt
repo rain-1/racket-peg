@@ -24,6 +24,6 @@ import <-- 'import' SP nonterminal ';' SP ;
 grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ';' SP ;
 pattern <-- alternative (SLASH SP alternative)* ;
 alternative <-- expression+ ;
-expression <-- [!&]? SP primary ([*+?] SP)? ;
+expression <-- [!&~]? SP primary ([*+?] SP)? ;
 primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
 SLASH < '/' ;
