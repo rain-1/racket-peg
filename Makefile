@@ -1,11 +1,13 @@
 .PHONY: install test docs
 
 all:
-	echo targets are install test and docs
+	echo targets are install update test and docs
 
 install:
-	raco pkg remove peg || true
-	raco pkg install --link
+	raco pkg install -t dir --link `pwd`
+
+update:
+	raco pkg update --link `pwd`
 
 test:
 	raco test tests
