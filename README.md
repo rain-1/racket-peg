@@ -21,3 +21,4 @@ Run `make test` to check that it is working after installation.
 ## Authors
 
 * Raymond Nicholson
+* João Pedro Abreu de Souza
