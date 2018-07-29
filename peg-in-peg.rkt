@@ -18,12 +18,14 @@ cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't' ;
 LB < '[' ;
 RB < ']' ;
 DASH < '-' ;
+identifier <-- [a-zA-Z] nt-char* ;
 
 peg <-- SP import* grammar+ ;
 import <-- 'import' SP nonterminal ';' SP ;
 grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ';' SP ;
 pattern <-- alternative (SLASH SP alternative)* ;
-alternative <-- expression+ ;
+alternative <-- (named-expression / expression)+ ;
+named-expression <-- identifier SP ~':' SP expression ;
 expression <-- [!&~]? SP primary ([*+?] SP)? ;
 primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
 SLASH < '/' ;
