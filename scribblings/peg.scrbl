@@ -103,6 +103,15 @@ Here is a simple calculator example that demonstrates semantic actions and recur
   (if v2 (* v1 v2) v1))
 }
 
+this grammar(without semantic actions) is equivalenty to :
+
+@codeblock{
+	#lang peg
+	number <-- res:[0-9]+ ;
+	sum <-- v1:prod ('+' v2:sum)? ;
+	prod <-- v1:number ('*' v2:prod)? ;
+}
+
 Usage:
 
 @codeblock{
