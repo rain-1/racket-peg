@@ -75,8 +75,8 @@
      ((lambda (x) (if extra? `(,extra? ,x) x))
       prim)))
   (match p
-    (`(named-expression (identifier ,n) ,exp)
-      (name (string->symbol n) (peg->scheme:expression exp)))
+    (`(named-expression (identifier . ,n) ,exp)
+      `(name ,(string->symbol n) ,(peg->scheme:expression exp)))
     (`(expression ,prim)
      (go #f (peg->scheme:primary prim) #f))
     (`(expression ,p-op ,prim) #:when (string? p-op)
