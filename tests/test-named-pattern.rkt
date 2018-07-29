@@ -10,6 +10,6 @@
 ;; because we don't have semantic actions(yet)
 (check-equal?
   (peg sum  "123+12")
-  '(sum (number "123") (number "12")))
+  '(sum (number . "123") (number . "12")))
   
   
