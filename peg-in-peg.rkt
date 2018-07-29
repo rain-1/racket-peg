@@ -1,7 +1,9 @@
 #lang peg
 
-nt-char <- [a-zA-Z0-9_\-] ;
-nonterminal <-- nt-char (nt-char / [./])* !nt-char SP ;
+import sexp-parser.rkt ;
+
+nt-char <- [a-zA-Z0-9_] ;
+nonterminal <-- nt-char (nt-char / [./\-])* !nt-char SP ;
 SP < (comment / [ \t\n])* ;
 comment < '//' [^\n]* ;
 
@@ -22,7 +24,7 @@ identifier <-- [a-zA-Z] nt-char* ;
 
 peg <-- SP import* grammar+ ;
 import <-- 'import' SP nonterminal ';' SP ;
-grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ';' SP ;
+grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ('->' SP s-exp SP)? ';' SP ;
 pattern <-- alternative (SLASH SP alternative)* ;
 alternative <-- (named-expression / expression)+ ;
 named-expression <-- identifier SP ~':' SP expression ;

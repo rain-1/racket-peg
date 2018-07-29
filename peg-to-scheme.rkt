@@ -7,6 +7,8 @@
 (require peg/peg-result)
 (require peg/peg-in-peg-expanded)
 
+(require peg/sexp-to-scheme)
+
 (provide peg->scheme)
 
 (define (make-and lst)
@@ -43,6 +45,8 @@
     (`(grammar (nonterminal . ,nt) ,op ,pat ";")
      (let ((op^ (op? op)))
        `(,op^ ,(string->symbol nt) ,(peg->scheme:pattern pat))))
+    (`(grammar (nonterminal . ,nt) "<-" ,pat "->" ,sem ";")
+     `(define-peg ,(string->symbol nt) ,(peg->scheme:pattern pat) ,(s-exp->scheme sem)))
     (else (error 'peg->scheme:grammar "~s" p))))
 
 (define (peg->scheme:pattern p)

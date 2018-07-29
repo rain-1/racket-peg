@@ -17,6 +17,9 @@ Run `make test` to check that it is working after installation.
 * `peg-in-peg-expanded.rkt` - An expanded version of peg-in-peg.
 * `peg-to-scheme.rkt` - translates a parsed AST from the PEG grammar parser to an scheme PEG parser.
 * `main.rkt` - implements the `#lang peg` glue based on the peg-in-peg parser.
+* `sexp-parser.rkt` - our own in-house s-expression reader.
+* `sexp-parser-expanded.rkt` - a macro expanded version of the above.
+* `sexp-to-scheme.rkt` - support.
 
 ## Authors
 
