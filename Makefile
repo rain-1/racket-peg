@@ -1,7 +1,12 @@
 .PHONY: install test docs
 
 all:
-	echo targets are install update test and docs
+	@echo targets are
+	@echo \* install
+	@echo \* update
+	@echo \* bootstrap
+	@echo \* test
+	@echo \* docs
 
 install:
 	echo 'rm -rf ~/.racket/'
@@ -13,6 +18,12 @@ update:
 	raco pkg update --link `pwd`/peg-lib
 	raco pkg update --link `pwd`/peg-doc
 	raco pkg update --link `pwd`/peg
+
+bootstrap:
+	racket peg-src/expand-lang.rkt peg-src/peg-in-peg.rkt > peg-in-peg-expanded.rkt
+	racket peg-src/expand-lang.rkt peg-src/sexp-parser.rkt > sexp-parser-expanded.rkt
+	mv peg-in-peg-expanded.rkt peg-lib/peg/peg-in-peg-expanded.rkt
+	mv sexp-parser-expanded.rkt peg-lib/peg/sexp-parser-expanded.rkt
 
 test:
 	raco test `pwd`/peg-test

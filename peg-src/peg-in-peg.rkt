@@ -1,6 +1,6 @@
 #lang peg
 
-import sexp-parser.rkt ;
+import sexp-parser-expanded.rkt ;
 
 nt-char <- [a-zA-Z0-9_] ;
 nonterminal <-- nt-char (nt-char / [./\-])* !nt-char SP ;

@@ -20,7 +20,6 @@ The lispy version is implemented in:
 
 * `peg-lib/peg/peg.rkt` - The PEG parsing VM and parser macro.
 * `peg-lib/peg/peg-result.rkt` - The fundamental data structure used for parse results. It's a kind of automatically joinable sequence.
-* 
 
 The PEG aspect is implemented in these files:
 

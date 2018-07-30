@@ -1,22 +1,45 @@
 (module anything racket
   (provide (all-defined-out))
-  (require "peg.rkt")
+  (require peg/peg)
   (begin
     (define-peg/drop _ (* (or #\space #\tab #\newline)))
     (define-peg/drop OB "(")
     (define-peg/drop CB ")")
     (define-peg/drop DQ #\")
     (define-peg/drop BS #\\)
-    (define-peg s-exp (or list quote quasiquote unquote atom))
+    (define-peg s-exp (or list quote quasiquote . ,atom))
     (define-peg atom (or boolean number s-identifier string))
     (define-peg/tag list (and OB _ (* (and s-exp _)) CB))
     (define-peg/tag boolean (or "#t" "#f"))
-    (define-peg/tag s-identifier (+ (range #\a #\z)))
+    (define-peg/tag
+     s-identifier
+     (+
+      (and (!
+            (or #\space
+                #\(
+                #\)
+                #\[
+                #\]
+                #\{
+                #\}
+                #\"
+                #\,
+                #\'
+                #\`
+                #\;
+                #\#
+                #\|
+                #\\))
+           (any-char))))
     (define-peg/tag number (+ (range #\0 #\9)))
-    (define-peg/tag string (and DQ (* (or (and (! (or #\" #\\)) (any-char)) (and BS (any-char)))) DQ))
+    (define-peg/tag
+     string
+     (and DQ
+          (* (or (and (! (or #\" #\\)) (any-char)) (and BS (any-char))))
+          DQ))
     (define-peg/drop SQ "'")
     (define-peg/drop BQ "`")
     (define-peg/drop COMMA ",")
     (define-peg/tag quote (and SQ _ s-exp))
     (define-peg/tag quasiquote (and BQ _ s-exp))
-    (define-peg/tag unquote (and COMMA _ s-exp))))
+    (define-peg/tag . ,(and COMMA _ s-exp))))
