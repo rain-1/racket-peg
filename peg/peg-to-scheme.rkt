@@ -40,12 +40,12 @@
       (("<--") 'define-peg/tag)
       (else (error 'peg->scheme:grammar "~s" op))))
   (match p
-    (`(import "import" (nonterminal . ,nt) ";")
+    (`(import "import" (name . ,nt) ";")
      `(require ,nt))
-    (`(grammar (nonterminal . ,nt) ,op ,pat ";")
+    (`(rule (name . ,nt) ,op ,pat ";")
      (let ((op^ (op? op)))
        `(,op^ ,(string->symbol nt) ,(peg->scheme:pattern pat))))
-    (`(grammar (nonterminal . ,nt) "<-" ,pat "->" ,sem ";")
+    (`(rule (name . ,nt) "<-" ,pat "->" ,sem ";")
      `(define-peg ,(string->symbol nt) ,(peg->scheme:pattern pat) ,(s-exp->scheme sem)))
     (else (error 'peg->scheme:grammar "~s" p))))
 
@@ -79,8 +79,8 @@
      ((lambda (x) (if extra? `(,extra? ,x) x))
       prim)))
   (match p
-    (`(named-expression ,n ,exp)
-      `(name ,(string->symbol n) ,(peg->scheme:expression exp)))
+    (`(expression (name . ,n) . ,rest)
+      `(name ,(string->symbol n) ,(peg->scheme:expression `(expression . ,rest))))
     (`(expression ,prim)
      (go #f (peg->scheme:primary prim) #f))
     (`(expression ,p-op ,prim) #:when (string? p-op)
@@ -103,7 +103,7 @@
      `(and (! ,(make-or (map peg->scheme:cc cc))) (any-char)))
     (`(primary charclass . ,cc)
      (make-or (map peg->scheme:cc cc)))
-    (`(primary nonterminal . ,nt)
+    (`(primary name . ,nt)
      (string->symbol nt))
     (else (error 'peg->scheme:primary "~s" p))))
 

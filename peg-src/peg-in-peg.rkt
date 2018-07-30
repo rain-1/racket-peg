@@ -1,32 +1,26 @@
 #lang peg
 
-import sexp-parser-expanded.rkt ;
+import sexp-parser-expanded.rkt;
 
-nt-char <- [a-zA-Z0-9_] ; // it's important that : is not in this, for named captures
-nonterminal <-- nt-char (nt-char / [./\-])* !nt-char SP ;
-SP < (comment / [ \t\n])* ;
-comment < '//' [^\n]* ;
+_ < ([ \t\n] / '//' [^\n]*)*;
+SLASH < '/' _;
 
-literal <-- SQ (BS ['\\] / !['\\] .)* SQ SP ;
-SQ < ['] ;
-BS < [\\] ;
+name <-- [a-zA-Z_] [a-zA-Z0-9\-_.]* _;
 
-charclass <-- LB '^'? (cc-range / cc-escape / cc-single)+ RB SP ;
-cc-range <-- cc-char DASH cc-char ;
-cc-escape <-- BS . ;
-cc-single <-- cc-char ;
-cc-char <- !cc-escape-char . / 'n' / 't' ;
-cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't' ;
-LB < '[' ;
-RB < ']' ;
-DASH < '-' ;
+rule <-- name ('<--' / '<-' / '<') _ pattern ('->' _ s-exp _)? ';' _;
+pattern <-- alternative (SLASH alternative)*;
+alternative <-- expression+;
+expression <-- (name ~':' _)? ([!&~] _)? primary ([*+?] _)?;
+primary <-- '(' _ pattern ')' _ / '.' _ / literal / charclass / name;
 
-peg <-- SP import* grammar+ ;
-import <-- 'import' SP nonterminal ';' SP ;
-grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ('->' SP s-exp SP)? ';' SP ;
-pattern <-- alternative (SLASH SP alternative)* ;
-alternative <-- (named-expression / expression)+ ;
-named-expression <-- nt-char+ SP ~':' SP expression ;
-expression <-- [!&~]? SP primary ([*+?] SP)? ;
-primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
-SLASH < '/' ;
+literal <-- ~['] (~[\\] ['\\] / !['\\] .)* ~['] _;
+
+charclass <-- ~'[' '^'? (cc-range / cc-escape / cc-single)+ ~']' _;
+cc-range <-- cc-char ~'-' cc-char;
+cc-escape <-- ~[\\] .;
+cc-single <-- cc-char;
+cc-char <- !cc-escape-char . / 'n' / 't';
+cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't';
+
+peg <-- _ import* rule+;
+import <-- 'import' _ name ';' _;
