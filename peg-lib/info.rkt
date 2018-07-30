@@ -4,8 +4,6 @@
 
 (define version "0.2")
 
-(define collection "peg")
-
 (define deps
   '("base"
     "rackunit-lib"))

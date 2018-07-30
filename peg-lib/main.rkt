@@ -1,14 +1,14 @@
 #lang racket
-(require peg/peg)
-(provide (all-from-out peg/peg))
+(require peg-lib/peg)
+(provide (all-from-out peg-lib/peg))
 (module reader racket
 
 (require syntax/strip-context)
 
-(require peg/peg)
-(require peg/peg-result)
-(require peg/peg-in-peg-expanded)
-(require peg/peg-to-scheme)
+(require peg-lib/peg)
+(require peg-lib/peg-result)
+(require peg-lib/peg-in-peg-expanded)
+(require peg-lib/peg-to-scheme)
 
 (provide (rename-out [literal-read read]
                      [literal-read-syntax read-syntax]))

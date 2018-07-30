@@ -3,11 +3,11 @@
 (require rackunit)
 (require racket/trace)
 
-(require peg/peg)
-(require peg/peg-result)
-(require peg/peg-in-peg-expanded)
+(require peg-lib/peg)
+(require peg-lib/peg-result)
+(require peg-lib/peg-in-peg-expanded)
 
-(require peg/sexp-to-scheme)
+(require peg-lib/sexp-to-scheme)
 
 (provide peg->scheme)
 
