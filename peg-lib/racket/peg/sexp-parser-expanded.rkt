@@ -1,6 +1,6 @@
 (module anything racket
   (provide (all-defined-out))
-  (require peg-lib/peg)
+  (require "peg.rkt")
   (begin
     (define-peg/drop _ (* (or #\space #\tab #\newline)))
     (define-peg/drop OB "(")

@@ -1,6 +1,6 @@
 (module anything racket
   (provide (all-defined-out))
-  (require peg-lib/peg)
+  (require "peg.rkt")
   (begin
     (require "sexp-parser-expanded.rkt")
     (define-peg nt-char (or (range #\a #\z) (range #\A #\Z) (range #\0 #\9) #\_))

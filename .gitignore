@@ -2,3 +2,5 @@
 compiled/*
 */compiled/*
 doc/*
+*.zo
+*.dep

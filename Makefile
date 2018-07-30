@@ -4,13 +4,18 @@ all:
 	echo targets are install update test and docs
 
 install:
-	raco pkg install -t dir --link `pwd`
+	echo 'rm -rf ~/.racket/'
+	raco pkg install -t dir --link `pwd`/peg-lib
+	raco pkg install -t dir --link `pwd`/peg-doc
+	raco pkg install -t dir --link `pwd`/peg
 
 update:
-	raco pkg update --link `pwd`
+	raco pkg update --link `pwd`/peg-lib
+	raco pkg update --link `pwd`/peg-doc
+	raco pkg update --link `pwd`/peg
 
 test:
 	raco test tests
 
 docs:
-	 scribble --dest scribblings/ scribblings/peg.scrbl
+	scribble --dest peg-doc/scribblings/ peg-doc/scribblings/peg/peg.scrbl

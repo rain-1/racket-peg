@@ -6,6 +6,7 @@
   '("gui-doc"
     "base"
     "scribble-lib"
-    "racket-doc"))
+    "racket-doc"
+    "peg-lib"))
 
 (define pkg-desc "documentation for peg")
