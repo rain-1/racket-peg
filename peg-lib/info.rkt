@@ -1,8 +1,19 @@
 #lang info
-(define version "0.1")
+
+(define collection 'multi)
+
+(define version "0.2")
+
 (define collection "peg")
-(define deps '("base"
-               "rackunit-lib"))
-(define build-deps '("scribble-lib" "racket-doc"))
+
+(define deps
+  '("base"
+    "rackunit-lib"))
+
+(define build-deps
+  '("scribble-lib"
+    "racket-doc"))
+
 (define scribblings '(("scribblings/peg.scrbl" ())))
+
 (define pkg-desc "A PEG parser generator")
