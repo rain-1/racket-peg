@@ -3,7 +3,7 @@
 (require rackunit)
 (require peg)
 
-(require "peg-example-guile-passwd.rkt")
+(require "../peg/peg-example-guile-passwd.rkt")
 
 (define *etc-passwd*
   "root:x:0:0:root:/root:/bin/bash

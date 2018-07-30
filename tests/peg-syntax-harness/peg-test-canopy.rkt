@@ -3,7 +3,7 @@
 (require rackunit)
 (require peg)
 
-(require "peg-example-canopy.rkt")
+(require "../peg/peg-example-canopy.rkt")
 
 ;; example taken from
 ;; http://canopy.jcoglan.com/langs/javascript.html

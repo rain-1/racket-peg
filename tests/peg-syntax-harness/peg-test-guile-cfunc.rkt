@@ -3,7 +3,7 @@
 (require rackunit)
 (require peg)
 
-(require "peg-example-guile-cfunc.rkt")
+(require "../peg/peg-example-guile-cfunc.rkt")
 
 (check-equal? (peg cfunc "int square(int a) { return a*a;}")
               '(cfunc (ctype . "int") (cname . "square") (cargs (carg (ctype . "int") (cname . "a")))

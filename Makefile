@@ -22,7 +22,7 @@ bootstrap:
 	mv sexp-parser-expanded.rkt peg/sexp-parser-expanded.rkt
 
 test:
-	raco test
+	raco test tests/
 
 docs:
 	scribble --dest scribblings/ scribblings/peg/peg.scrbl
