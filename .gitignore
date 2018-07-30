@@ -4,3 +4,6 @@ compiled/*
 doc/*
 *.zo
 *.dep
+*.html
+*.js
+*.css
