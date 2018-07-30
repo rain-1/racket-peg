@@ -3,7 +3,7 @@
 (require rackunit)
 (require peg)
 
-(require "../peg/peg-example-peg-as-peg.rkt")
+(require "../peg-syntax/peg-example-peg-as-peg.rkt")
 
 (define *expr-peg* #<<EOF
 expr <- sum ;expra <- suma ;

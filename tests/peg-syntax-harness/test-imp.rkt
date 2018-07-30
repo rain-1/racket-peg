@@ -3,7 +3,7 @@
 (require peg)
 (require rackunit)
 
-(require "peg-example-imp.rkt")
+(require "../peg-syntax/peg-example-imp.rkt")
 
 (check-equal?
   (peg program "

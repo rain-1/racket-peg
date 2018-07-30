@@ -3,7 +3,7 @@
 (require rackunit)
 (require peg)
 
-(require "../peg/peg-example-expr.rkt")
+(require "../peg-syntax/peg-example-expr.rkt")
 
 (check-equal? (peg expr "4324+431")
               '(sum (product value number . "4324") "+" (sum product value number . "431")))

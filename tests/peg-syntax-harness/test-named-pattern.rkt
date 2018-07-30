@@ -3,8 +3,7 @@
 (require peg)
 (require rackunit)
 
-(require "peg-example-named-pattern.rkt")
-
+(require "../peg-syntax/peg-example-named-pattern.rkt")
 
 ;; As we have this named patterns, this don't explode, but don't change nothing
 ;; because we don't have semantic actions(yet)

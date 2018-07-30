@@ -2,7 +2,7 @@
 
 (require rackunit)
 (require peg)
-(require "peg-example-import.rkt")
+(require "../peg-syntax/peg-example-import.rkt")
 
 (check-equal?
   (peg presentation "this is a well formed expr 4324+431")

@@ -3,7 +3,7 @@
 (require peg)
 (require rackunit)
 
-(require "../peg/peg-example-peg-in-peg-comments.rkt")
+(require "../peg-syntax/peg-example-peg-in-peg-comments.rkt")
 
 (check-equal? (peg number "123")
     '(number . "123")) ; 123 in decimal
