@@ -4,22 +4,36 @@ This library implements a PEG parser generator.
 
 ## Getting Started
 
-Run `make install` to install the peg library. You should be able to `(require peg)` in your own racket programs after that.
-If there is a problem installing  with raco pkg, you may be able to just copy the repo to `/usr/share/racket/collect/peg`. This is not recommended but it is a workaround.
+* Run `make install` to install the peg library. You should be able to `(require peg)` in your own racket programs after that. Or use `lang #peg`!
 
-Run `make test` to check that it is working after installation.
+* Run `make update` to apply changes, if you're hacking on it.
+
+* Run `make docs` to build the documentation.
+
+* Run `make test` to check that it is working after installation.
 
 ## Source Code Map
 
-* `peg.rkt` - The main source file, implementing the PEG language and VM.
-* `peg-result.rkt` - machinary for peg results, automatically joining sequences.
-* `peg-in-peg.rkt` - Implements the standard PEG syntax.
-* `peg-in-peg-expanded.rkt` - An expanded version of peg-in-peg.
-* `peg-to-scheme.rkt` - translates a parsed AST from the PEG grammar parser to an scheme PEG parser.
-* `main.rkt` - implements the `#lang peg` glue based on the peg-in-peg parser.
-* `sexp-parser.rkt` - our own in-house s-expression reader.
-* `sexp-parser-expanded.rkt` - a macro expanded version of the above.
-* `sexp-to-scheme.rkt` - support.
+The PEG parser system is built in two stages. There is a lispy s-expression version. Then there is a self-hosted PEG syntax version.
+
+The lispy version is implemented in:
+
+* `peg-lib/peg/peg.rkt` - The PEG parsing VM and parser macro.
+* `peg-lib/peg/peg-result.rkt` - The fundamental data structure used for parse results. It's a kind of automatically joinable sequence.
+* 
+
+The PEG aspect is implemented in these files:
+
+* `peg-src/peg-in-peg.rkt` - The syntax of our peg language. In peg.
+* `peg-src/sexp-parser.rkt` - A basic s-expression parser. In peg.
+ 
+Both of the above files are "bootstrapped" using the racket macro expander to produce the following:
+
+* `peg-lib/peg/peg-in-peg-expanded.rkt` - expanded version of `peg-in-peg.rkt`.
+* `peg-lib/peg/sexp-parser-expanded.rkt` - expanded version of `sexp-parser.rkt`.
+* `peg-lib/peg/sexp-to-scheme.rkt` - support for sexp-parser. Translates a parsed AST from the PEG grammar parser to an scheme PEG parser.
+* `peg-lib/peg/peg-to-scheme.rkt` - support for peg-in-peg.
+* `peg-lib/peg/main.rkt` - This adds the `#lang peg` glue to racket.
 
 ## Authors
 
