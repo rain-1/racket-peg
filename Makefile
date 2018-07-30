@@ -15,7 +15,7 @@ update:
 	raco pkg update --link `pwd`/peg
 
 test:
-	raco test tests
+	raco test `pwd`/peg-test
 
 docs:
 	scribble --dest peg-doc/scribblings/ peg-doc/scribblings/peg/peg.scrbl
