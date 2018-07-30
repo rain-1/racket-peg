@@ -161,36 +161,28 @@ The best way to understand the PEG syntax would be by reference to examples, the
 @verbatim{
 #lang peg
 
-nt-char <- [a-zA-Z0-9_\-] ;
-nonterminal <-- nt-char+ !nt-char SP ;
-SP < (comment / [ \t\n])* ;
-comment < '//' [^\n]* ;
+import sexp-parser-expanded.rkt;
 
-literal <-- SQ (BS ['\\] / !['\\] .)* SQ SP ;
-SQ < ['] ;
-BS < [\\] ;
+_ < ([ \t\n] / '//' [^\n]*)*;
+SLASH < '/' _;
 
-charclass <-- LB '^'? (cc-range / cc-escape / cc-single)+ RB SP ;
-cc-range <-- cc-char DASH cc-char ;
-cc-escape <-- BS . ;
-cc-single <-- cc-char ;
-cc-char <- !cc-escape-char . / 'n' / 't' ;
-cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't' ;
-LB < '[' ;
-RB < ']' ;
-DASH < '-' ;
+name <-- [a-zA-Z_] [a-zA-Z0-9\-_.]* _;
 
-peg <-- SP grammar+ ;
-grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ';' SP ;
-pattern <-- alternative (SLASH SP alternative)* ;
-alternative <-- expression+ ;
-expression <-- [!&~]? SP primary ([*+?] SP)? ; //yes, we can use one-line comments
-//the ! above is the negative lookahead operator
-//the & above is the positibe lookahead operator
+rule <-- name ('<--' / '<-' / '<') _ pattern ('->' _ s-exp _)? ';' _;
+pattern <-- alternative (SLASH alternative)*;
+alternative <-- expression+;
+expression <-- (name ~':' _)? ([!&~] _)? primary ([*+?] _)?;
+primary <-- '(' _ pattern ')' _ / '.' _ / literal / charclass / name;
 
-//the ~ above is the drop operator. He discard the semantic value of the expression
-//immediately on their right, is cool to use to discard garbage in the input, like commas,
-//spaces, things like this
-primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
-SLASH < '/' ;
+literal <-- ~['] (~[\\] ['\\] / !['\\] .)* ~['] _;
+
+charclass <-- ~'[' '^'? (cc-range / cc-escape / cc-single)+ ~']' _;
+cc-range <-- cc-char ~'-' cc-char;
+cc-escape <-- ~[\\] .;
+cc-single <-- cc-char;
+cc-char <- !cc-escape-char . / 'n' / 't';
+cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't';
+
+peg <-- _ import* rule+;
+import <-- 'import' _ name ';' _;
 }
