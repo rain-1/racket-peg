@@ -20,6 +20,7 @@ bootstrap:
 	racket peg-src/expand-lang.rkt peg-src/sexp-parser.rkt > sexp-parser-expanded.rkt
 	mv peg-in-peg-expanded.rkt peg/peg-in-peg-expanded.rkt
 	mv sexp-parser-expanded.rkt peg/sexp-parser-expanded.rkt
+	@echo make sure to run bootstrap again!
 
 test:
 	raco test tests/

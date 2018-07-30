@@ -30,9 +30,6 @@
     (define-peg/drop LB "[")
     (define-peg/drop RB "]")
     (define-peg/drop DASH "-")
-    (define-peg/tag
-     identifier
-     (and (or (range #\a #\z) (range #\A #\Z)) (* nt-char)))
     (define-peg/tag peg (and SP (* import) (+ grammar)))
     (define-peg/tag import (and "import" SP nonterminal ";" SP))
     (define-peg/tag
@@ -45,7 +42,7 @@
     (define-peg/tag alternative (+ (or named-expression expression)))
     (define-peg/tag
      named-expression
-     (and identifier SP (drop ":") SP expression))
+     (and (+ nt-char) SP (drop ":") SP expression))
     (define-peg/tag
      expression
      (and (? (or #\! #\& #\~)) SP primary (? (and (or #\* #\+ #\?) SP))))

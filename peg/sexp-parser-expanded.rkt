@@ -8,11 +8,11 @@
     (define-peg/drop DQ #\")
     (define-peg/drop BS #\\)
     (define-peg s-exp (or list quote quasiquote . ,atom))
-    (define-peg atom (or boolean number s-identifier string))
+    (define-peg atom (or boolean number identifier string))
     (define-peg/tag list (and OB _ (* (and s-exp _)) CB))
     (define-peg/tag boolean (or "#t" "#f"))
     (define-peg/tag
-     s-identifier
+     identifier
      (+
       (and (!
             (or #\space

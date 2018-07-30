@@ -2,7 +2,7 @@
 
 import sexp-parser-expanded.rkt ;
 
-nt-char <- [a-zA-Z0-9_] ;
+nt-char <- [a-zA-Z0-9_] ; // it's important that : is not in this, for named captures
 nonterminal <-- nt-char (nt-char / [./\-])* !nt-char SP ;
 SP < (comment / [ \t\n])* ;
 comment < '//' [^\n]* ;
@@ -20,14 +20,13 @@ cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't' ;
 LB < '[' ;
 RB < ']' ;
 DASH < '-' ;
-identifier <-- [a-zA-Z] nt-char* ;
 
 peg <-- SP import* grammar+ ;
 import <-- 'import' SP nonterminal ';' SP ;
 grammar <-- (nonterminal ('<--' / '<-' / '<') SP pattern) ('->' SP s-exp SP)? ';' SP ;
 pattern <-- alternative (SLASH SP alternative)* ;
 alternative <-- (named-expression / expression)+ ;
-named-expression <-- identifier SP ~':' SP expression ;
+named-expression <-- nt-char+ SP ~':' SP expression ;
 expression <-- [!&~]? SP primary ([*+?] SP)? ;
 primary <-- '(' SP pattern ')' SP / '.' SP / literal / charclass / nonterminal ;
 SLASH < '/' ;

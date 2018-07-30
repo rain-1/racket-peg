@@ -6,13 +6,13 @@ CB < ')' ;
 DQ < ["] ;
 BS < [\\] ;
 
-s-exp <-  list / quote / quasiquote / unquote  / atom;
+s-exp <-  list / quote / quasiquote / unquote / atom;
 
-atom <- boolean / number / s-identifier / string ;
+atom <- boolean / number / identifier / string ;
 list <-- OB _ (s-exp _)*  CB ;
 
 boolean <-- '#t' / '#f' ;
-s-identifier <--   [^ ()\[\]{}",'`;#|\\]+ ;
+identifier <--   [^ ()\[\]{}",'`;#|\\]+ ;
 number <-- [0-9]+ ;
 string <-- DQ ([^"\\] / BS .)* DQ ;
 
