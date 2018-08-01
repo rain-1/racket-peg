@@ -16,8 +16,8 @@ update:
 	raco pkg update --link `pwd`/peg
 
 bootstrap:
-	raco read peg-src/peg-in-peg.rkt > peg-in-peg-expanded.rkt
-	raco read peg-src/sexp-parser.rkt > sexp-parser-expanded.rkt
+	raco read -n 256 peg-src/peg-in-peg.rkt > peg-in-peg-expanded.rkt
+	raco read -n 256 peg-src/sexp-parser.rkt > sexp-parser-expanded.rkt
 	mv peg-in-peg-expanded.rkt peg/peg-in-peg-expanded.rkt
 	mv sexp-parser-expanded.rkt peg/sexp-parser-expanded.rkt
 	@echo make sure to run bootstrap again!

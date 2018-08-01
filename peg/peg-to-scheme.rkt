@@ -7,8 +7,6 @@
 (require "peg-result.rkt")
 (require "peg-in-peg-expanded.rkt")
 
-(require "sexp-to-scheme.rkt")
-
 (provide peg->scheme)
 
 (define (make-and lst)
@@ -46,7 +44,7 @@
      (let ((op^ (op? op)))
        `(,op^ ,(string->symbol nt) ,(peg->scheme:pattern pat))))
     (`(rule (name . ,nt) "<-" ,pat "->" ,sem ";")
-     `(define-peg ,(string->symbol nt) ,(peg->scheme:pattern pat) ,(s-exp->scheme sem)))
+     `(define-peg ,(string->symbol nt) ,(peg->scheme:pattern pat) ,sem))
     (else (error 'peg->scheme:grammar "~s" p))))
 
 (define (peg->scheme:pattern p)

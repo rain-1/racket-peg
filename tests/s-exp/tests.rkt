@@ -3,7 +3,8 @@
 (require rackunit)
 (require peg)
 (require peg/sexp-parser-expanded)
-(require peg/sexp-to-scheme)
+
+(define (s-exp->scheme x) x)
 
 (check-equal?
  (s-exp->scheme (peg s-exp "(\"foo bar\" baz (#t 244))"))

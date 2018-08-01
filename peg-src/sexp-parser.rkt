@@ -1,25 +1,18 @@
 #lang peg
 
 _ < [ \t\n]*;
-OB < '(' ;
-CB < ')' ;
-DQ < ["] ;
-BS < [\\] ;
 
-s-exp <-  list / quote / quasiquote / unquote / atom;
+s-exp <- list / quote / quasiquote / unquote / atom;
 
-atom <- boolean / number / identifier / string ;
-list <-- OB _ (s-exp _)*  CB ;
+list <- '(' _ lst:(s-exp _)* ')' -> lst;
 
-boolean <-- '#t' / '#f' ;
-identifier <--   [^ ()\[\]{}",'`;#|\\]+ ;
-number <-- [0-9]+ ;
-string <-- DQ ([^"\\] / BS .)* DQ ;
+quote <- ~'\'' _ s:s-exp -> (list 'quote s);
+quasiquote <- ~'`' _ s:s-exp -> (list 'quasiquote s);
+unquote <- ~',' _ s:s-exp -> (list 'unquote s);
 
-SQ < '\'' ;
-BQ < '`' ;
-COMMA < ',' ;
+atom <- boolean / number / identifier / string;
 
-quote <-- SQ _ s-exp ;
-quasiquote <-- BQ _ s-exp ;
-unquote <-- COMMA _ s-exp ;
+boolean <- x:'#t' / x:'#f' -> (equal? "#t" x);
+identifier <- s:[^ ()\[\]{}",'`;#|\\]+ -> (string->symbol s);
+number <- n:[0-9]+ -> (string->number n);
+string <- ["] s:([^"\\] / ~[\\] .)* ["] -> s;
