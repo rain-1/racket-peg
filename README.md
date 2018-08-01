@@ -18,8 +18,8 @@ The PEG parser system is built in two stages. There is a lispy s-expression vers
 
 The lispy version is implemented in:
 
-* `peg/peg.rkt` - The PEG parsing VM and parser macro.
-* `peg/peg-result.rkt` - The fundamental data structure used for parse results. It's a kind of automatically joinable sequence.
+* `peg.rkt` - The PEG parsing VM and parser macro.
+* `peg-result.rkt` - The fundamental data structure used for parse results. It's a kind of automatically joinable sequence.
 
 The PEG aspect is implemented in these files:
 
@@ -28,11 +28,11 @@ The PEG aspect is implemented in these files:
  
 Both of the above files are "bootstrapped" using the racket macro expander to produce the following:
 
-* `peg/peg-in-peg-expanded.rkt` - expanded version of `peg-in-peg.rkt`.
-* `peg/sexp-parser-expanded.rkt` - expanded version of `sexp-parser.rkt`.
-* `peg/sexp-to-scheme.rkt` - support for sexp-parser. Translates a parsed AST from the PEG grammar parser to an scheme PEG parser.
-* `peg/peg-to-scheme.rkt` - support for peg-in-peg.
-* `peg/main.rkt` - This adds the `#lang peg` glue to racket.
+* `peg-in-peg-expanded.rkt` - expanded version of `peg-in-peg.rkt`.
+* `sexp-parser-expanded.rkt` - expanded version of `sexp-parser.rkt`.
+* `sexp-to-scheme.rkt` - support for sexp-parser. Translates a parsed AST from the PEG grammar parser to an scheme PEG parser.
+* `peg-to-scheme.rkt` - support for peg-in-peg.
+* `main.rkt` - This adds the `#lang peg` glue to racket.
 
 ## Authors
 
