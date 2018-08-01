@@ -6,9 +6,9 @@ s-exp <- list / quote / quasiquote / unquote / atom;
 
 list <- '(' _ lst:(s-exp _)* ')' -> lst;
 
-quote <- ~'\'' _ s:s-exp -> (list 'quote s);
-quasiquote <- ~'`' _ s:s-exp -> (list 'quasiquote s);
-unquote <- ~',' _ s:s-exp -> (list 'unquote s);
+quote <- '\'' _ s:s-exp -> (list 'quote s);
+quasiquote <- '`' _ s:s-exp -> (list 'quasiquote s);
+unquote <- ',' _ s:s-exp -> (list 'unquote s);
 
 atom <- boolean / number / identifier / string;
 
