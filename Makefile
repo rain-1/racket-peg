@@ -10,20 +10,20 @@ all:
 
 install:
 	echo 'rm -rf ~/.racket/'
-	raco pkg install -t dir --link `pwd`/peg
+	raco pkg install -t dir --link `pwd`
 
 update:
-	raco pkg update --link `pwd`/peg
+	raco pkg update --link `pwd`
 
 bootstrap:
-	raco read -n 256 peg-src/peg-in-peg.rkt > peg-in-peg-expanded.rkt
-	raco read -n 256 peg-src/sexp-parser.rkt > sexp-parser-expanded.rkt
-	mv peg-in-peg-expanded.rkt peg/peg-in-peg-expanded.rkt
-	mv sexp-parser-expanded.rkt peg/sexp-parser-expanded.rkt
+	raco read -n 256 peg-src/peg-in-peg.peg > peg-in-peg-expanded.rkt.tmp
+	raco read -n 256 peg-src/sexp-parser.peg > sexp-parser-expanded.rkt.tmp
+	mv peg-in-peg-expanded.rkt.tmp peg-in-peg-expanded.rkt
+	mv sexp-parser-expanded.rkt.tmp sexp-parser-expanded.rkt
 	@echo make sure to run bootstrap again!
 
 test:
 	raco test tests/
 
 docs:
-	scribble --dest scribblings/ scribblings/peg/peg.scrbl
+	scribble --dest scribblings/ scribblings/peg.scrbl
