@@ -19,7 +19,7 @@ number     <- n:[0-9]+                      -> (string->number n);
 string     <- ["] s:([^"\\] / ~[\\] .)* ["] -> s;
 
 character <- ~'#\\' v:code -> v;
-alphabetic <- v:[a-zA-Z] -> (string-ref v 0) ;
+alphabetic <- v:[a-zA-Z] -> (string-ref v 0);
 code <- named-char / alphabetic-code / digit;
 named-char <- nm:('null' / 'nul' / 'backspace' / 'tab' / 'newline' / 'tab' / 'vtab' / 'page' / 'return' / 'space' / 'rubout') !alphabetic
   -> (cadr (assoc nm '(("null" #\null)
