@@ -2,10 +2,32 @@
 
 _ < [ \t\n]*;
 
+
+alphabetic <- v:[a-zA-Z] -> (string-ref v 0) ;
+
+
+
+character <- ~'#\\' v:code -> v;
+
+code <- null / backspace / tab / newline / vtab / page / return / space / delete / alphabetic-code / digit;
+alphabetic-code <- v:alphabetic ! alphabetic -> v ;
+tab <- 'tab' ! alphabetic -> (integer->char 9) ;
+null <- ('null' / 'nul') ! alphabetic -> (integer->char 0) ;
+backspace <- 'backspace' ! alphabetic -> (integer->char 8) ;
+newline <- ('newline' / 'linefeed') ! alphabetic -> (integer->char 10) ;
+vtab <- 'vtab' ! alphabetic -> (integer->char 11) ;
+page <- 'page' ! alphabetic -> (integer->char 12) ;
+return <- 'return' ! alphabetic -> (integer->char 13) ;
+space <- 'space' ! alphabetic -> (integer->char 32) ;
+delete <- 'rubout' ! alphabetic -> (integer->char 127);
+digit <- v:[0-9] -> (string-ref v 0) ;
+
+
+
 s-exp <-
   list /
   quote / quasiquote / unquote /
-  boolean / number / identifier / string;
+  boolean / number / identifier / character / string;
 
 list <- '(' _ lst:(s-exp _)* ')' -> lst;
 
