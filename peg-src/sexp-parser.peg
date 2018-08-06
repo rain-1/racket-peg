@@ -3,18 +3,23 @@
 _ < [ \t\n]*;
 
 s-exp <-
-  dot-pair / list /
+  list /
   quote / quasiquote / unquote /
   boolean / number / identifier / character / string;
 
-list <- '(' _ lst:(s-exp _)* ')' -> lst;
+list <- '(' _ lst:(s-exp _)*
+        (dotted-pair:'.' _ back:s-exp)?
+        ')'
+     -> (if dotted-pair
+            (append lst back)
+            lst);
 
 quote      <- '\'' _ s:s-exp -> (list 'quote s);
 quasiquote <- '`' _ s:s-exp  -> (list 'quasiquote s);
 unquote    <- ',' _ s:s-exp  -> (list 'unquote s);
 
 boolean    <- x:'#t' / x:'#f'               -> (equal? "#t" x);
-identifier <- s:[^ ()\[\]{}",'`;#|\\]+      -> (string->symbol s);
+identifier <- s:[^. \t\n()\[\]{}",'`;#|\\]+      -> (string->symbol s);
 number     <- n:[0-9]+                      -> (string->number n);
 string     <- ["] s:([^"\\] / ~[\\] .)* ["] -> s;
 
@@ -35,8 +40,3 @@ named-char <- nm:('null' / 'nul' / 'backspace' / 'tab' / 'newline' / 'tab' / 'vt
 alphabetic-code <- v:alphabetic ! alphabetic -> v;
 digit <- v:[0-9] -> (string-ref v 0);
 
-
-
-dot-pair <- ~'(' _ front:( (! '.') s-exp ( _ (! '.') s-exp)*) ' ' _ ~'.' ' ' _ back:s-exp _ ~')'
-   -> (let ((l (append front (list back))))
-        (apply list* l));
