@@ -18,6 +18,6 @@
     (define-peg
      named-char
      (and (name nm (or "null" "nul" "backspace" "tab" "newline" "tab" "vtab" "page" "return" "space" "rubout")) (! alphabetic))
-     (cadr (assoc nm '(("null" #\nul) ("nul" #\nul) ("backspace" #\backspace) ("tab" #\tab) ("newline" #\newline) ("vtab" #\vtab) ("page" #\page) ("return" #\return) ("space" #\space) ("rubout" #\rubout)))))
+     (cdr (assoc nm '(("null" . #\nul) ("nul" . #\nul) ("backspace" . #\backspace) ("tab" . #\tab) ("newline" . #\newline) ("vtab" . #\vtab) ("page" . #\page) ("return" . #\return) ("space" . #\space) ("rubout" . #\rubout)))))
     (define-peg alphabetic-code (and (name v alphabetic) (! alphabetic)) v)
     (define-peg digit (name v (range #\0 #\9)) (string-ref v 0))))
