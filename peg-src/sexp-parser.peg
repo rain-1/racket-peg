@@ -3,7 +3,7 @@
 _ < [ \t\n]*;
 
 s-exp <-
-  list /
+  dot-pair / list /
   quote / quasiquote / unquote /
   boolean / number / identifier / character / string;
 
@@ -34,3 +34,9 @@ named-char <- nm:('null' / 'nul' / 'backspace' / 'tab' / 'newline' / 'tab' / 'vt
                        ("rubout" #\rubout))));
 alphabetic-code <- v:alphabetic ! alphabetic -> v;
 digit <- v:[0-9] -> (string-ref v 0);
+
+
+
+dot-pair <- ~'(' _ front:( (! '.') s-exp ( _ (! '.') s-exp)*) ' ' _ ~'.' ' ' _ back:s-exp _ ~')'
+   -> (let ((l (append front (list back))))
+        (apply list* l));
