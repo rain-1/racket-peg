@@ -5,15 +5,38 @@ _ < [ \t\n]*;
 s-exp <-
   list /
   quote / quasiquote / unquote /
-  boolean / number / identifier / string;
+  boolean / number / identifier / character / string;
 
-list <- '(' _ lst:(s-exp _)* ')' -> lst;
+list <- '(' _ lst:(s-exp _)*
+        (dotted-pair:'.' _ back:s-exp)?
+        ')'
+     -> (if dotted-pair
+            (append lst back)
+            lst);
 
 quote      <- '\'' _ s:s-exp -> (list 'quote s);
 quasiquote <- '`' _ s:s-exp  -> (list 'quasiquote s);
 unquote    <- ',' _ s:s-exp  -> (list 'unquote s);
 
 boolean    <- x:'#t' / x:'#f'               -> (equal? "#t" x);
-identifier <- s:[^ ()\[\]{}",'`;#|\\]+      -> (string->symbol s);
+identifier <- s:[^. \t\n()\[\]{}",'`;#|\\]+      -> (string->symbol s);
 number     <- n:[0-9]+                      -> (string->number n);
 string     <- ["] s:([^"\\] / ~[\\] .)* ["] -> s;
+
+character <- ~'#\\' v:code -> v;
+alphabetic <- v:[a-zA-Z] -> (string-ref v 0);
+code <- named-char / alphabetic-code / digit;
+named-char <- nm:('null' / 'nul' / 'backspace' / 'tab' / 'newline' / 'tab' / 'vtab' / 'page' / 'return' / 'space' / 'rubout') !alphabetic
+  -> (cdr (assoc nm '(("null" . #\null)
+                      ("nul" . #\null)
+                      ("backspace" . #\backspace)
+                      ("tab" . #\tab)
+                      ("newline" . #\newline)
+                      ("vtab" . #\vtab)
+                      ("page" . #\page)
+                      ("return" . #\return)
+                      ("space" . #\space)
+                      ("rubout" . #\rubout))));
+alphabetic-code <- v:alphabetic ! alphabetic -> v;
+digit <- v:[0-9] -> (string-ref v 0);
+

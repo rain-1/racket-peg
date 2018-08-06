@@ -1,5 +1,7 @@
 #lang scribble/manual
-@(require scribble/bnf)
+@require[@for-label[peg
+                    racket/base]
+         scribble/bnf]
 
 @title{PEG}
 
