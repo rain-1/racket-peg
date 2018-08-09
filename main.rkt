@@ -7,7 +7,7 @@
 
 (require "peg.rkt")
 (require "peg-result.rkt")
-(require "peg-in-peg-expanded.rkt")
+(require "peg-in-peg.rkt")
 (require "peg-to-scheme.rkt")
 
 (provide (rename-out [literal-read read]
