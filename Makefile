@@ -19,7 +19,7 @@ bootstrap:
 	raco read -n 256 peg-src/peg-in-peg.peg > peg-in-peg-expanded.rkt.tmp
 	raco read -n 256 peg-src/s-exp.peg > s-exp.rkt.tmp
 	mv peg-in-peg-expanded.rkt.tmp peg-in-peg-expanded.rkt
-	mv s-exp.rkt.tmp sexp-parser-expanded.rkt
+	mv s-exp.rkt.tmp s-exp.rkt
 	@echo make sure to run bootstrap again!
 
 test:

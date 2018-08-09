@@ -2,7 +2,7 @@
   (provide (all-defined-out))
   (require peg/peg)
   (begin
-    (require "sexp-parser-expanded.rkt")
+    (require "s-exp.rkt")
     (define-peg/drop _ (* (or (or #\space #\tab #\newline) (and "//" (* (and (! #\newline) (any-char)))))))
     (define-peg/drop SLASH (and "/" _))
     (define-peg/tag name (and (or (range #\a #\z) (range #\A #\Z) #\_) (* (or (range #\a #\z) (range #\A #\Z) (range #\0 #\9) #\- #\_ #\.)) _))
