@@ -30,7 +30,6 @@ Both of the above files are "bootstrapped" using the racket macro expander to pr
 
 * `peg-in-peg-expanded.rkt` - expanded version of `peg-in-peg.rkt`.
 * `s-exp.rkt` - expanded version of `sexp-parser.rkt`.
-* `sexp-to-scheme.rkt` - support for sexp-parser. Translates a parsed AST from the PEG grammar parser to an scheme PEG parser.
 * `peg-to-scheme.rkt` - support for peg-in-peg.
 * `main.rkt` - This adds the `#lang peg` glue to racket.
 
