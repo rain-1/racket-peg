@@ -163,7 +163,7 @@ The best way to understand the PEG syntax would be by reference to examples, the
 @verbatim{
 #lang peg
 
-import sexp-parser-expanded.rkt;
+import s-exp.rkt;
 
 _ < ([ \t\n] / '//' [^\n]*)*;
 SLASH < '/' _;

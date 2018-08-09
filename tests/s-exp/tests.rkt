@@ -2,7 +2,7 @@
 
 (require rackunit)
 (require peg)
-(require peg/sexp-parser-expanded)
+(require peg/s-exp)
 
 (define (s-exp->scheme x) x)
 
