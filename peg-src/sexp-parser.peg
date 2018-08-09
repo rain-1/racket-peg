@@ -20,7 +20,7 @@ unquote    <- ',' _ s:s-exp  -> (list 'unquote s);
 
 boolean    <- x:'#t' / x:'#f'               -> (equal? "#t" x);
 identifier <- s:[^. \t\n()\[\]{}",'`;#|\\]+      -> (string->symbol s);
-number     <- n:[0-9]+                      -> (string->number n);
+number     <- floating-point;
 string     <- ["] s:([^"\\] / ~[\\] .)* ["] -> s;
 
 character <- ~'#\\' v:code -> v;
@@ -39,4 +39,11 @@ named-char <- nm:('null' / 'nul' / 'backspace' / 'tab' / 'newline' / 'tab' / 'vt
                       ("rubout" . #\rubout))));
 alphabetic-code <- v:alphabetic ! alphabetic -> v;
 digit <- v:[0-9] -> (string-ref v 0);
+
+
+signal <- '-' / '+';
+integer-part <- [0-9]+;
+fractional-part <- [0-9]+;
+scientific-notation <- ('e' / 'E') integer-part;
+floating-point <- value:(signal? (& integer-part / & ('.' fractional-part)) integer-part? ('.' fractional-part)? (scientific-notation)?) -> (string->number value);
 
