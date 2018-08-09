@@ -45,5 +45,4 @@ signal <- '-' / '+';
 integer-part <- [0-9]+;
 fractional-part <- [0-9]+;
 scientific-notation <- ('e' / 'E') integer-part;
-floating-point <- value:(signal? (& integer-part / & ('.' fractional-part)) integer-part? ('.' fractional-part)? (scientific-notation)?) -> (string->number value);
-
+floating-point <- value:(signal? integer-part ('.' fractional-part)? (scientific-notation)?) -> (string->number value);

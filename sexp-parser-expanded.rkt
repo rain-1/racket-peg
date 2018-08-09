@@ -4,18 +4,12 @@
   (begin
     (define-peg/drop _ (* (or #\space #\tab #\newline)))
     (define-peg s-exp (or list quote quasiquote unquote boolean number identifier character string))
-    (define-peg
-     list
-     (and "(" _ (name lst (* (and s-exp _))) (? (and (name dotted-pair ".") _ (name back s-exp))) ")")
-     (if dotted-pair (append lst back) lst))
+    (define-peg list (and "(" _ (name lst (* (and s-exp _))) (? (and (name dotted-pair ".") _ (name back s-exp))) ")") (if dotted-pair (append lst back) lst))
     (define-peg quote (and "'" _ (name s s-exp)) (list 'quote s))
     (define-peg quasiquote (and "`" _ (name s s-exp)) (list 'quasiquote s))
     (define-peg unquote (and "," _ (name s s-exp)) (list 'unquote s))
     (define-peg boolean (or (name x "#t") (name x "#f")) (equal? "#t" x))
-    (define-peg
-     identifier
-     (name s (+ (and (! (or #\. #\space #\tab #\newline #\( #\) #\[ #\] #\{ #\} #\" #\, #\' #\` #\; #\# #\| #\\)) (any-char))))
-     (string->symbol s))
+    (define-peg identifier (name s (+ (and (! (or #\. #\space #\tab #\newline #\( #\) #\[ #\] #\{ #\} #\" #\, #\' #\` #\; #\# #\| #\\)) (any-char)))) (string->symbol s))
     (define-peg number floating-point)
     (define-peg string (and #\" (name s (* (or (and (! (or #\" #\\)) (any-char)) (and (drop #\\) (any-char))))) #\") s)
     (define-peg character (and (drop "#\\") (name v code)) v)
@@ -24,28 +18,11 @@
     (define-peg
      named-char
      (and (name nm (or "null" "nul" "backspace" "tab" "newline" "tab" "vtab" "page" "return" "space" "rubout")) (! alphabetic))
-     (cdr
-      (assoc
-       nm
-       '(("null" . #\nul)
-         ("nul" . #\nul)
-         ("backspace" . #\backspace)
-         ("tab" . #\tab)
-         ("newline" . #\newline)
-         ("vtab" . #\vtab)
-         ("page" . #\page)
-         ("return" . #\return)
-         ("space" . #\space)
-         ("rubout" . #\rubout)))))
+     (cdr (assoc nm '(("null" . #\nul) ("nul" . #\nul) ("backspace" . #\backspace) ("tab" . #\tab) ("newline" . #\newline) ("vtab" . #\vtab) ("page" . #\page) ("return" . #\return) ("space" . #\space) ("rubout" . #\rubout)))))
     (define-peg alphabetic-code (and (name v alphabetic) (! alphabetic)) v)
     (define-peg digit (name v (range #\0 #\9)) (string-ref v 0))
     (define-peg signal (or "-" "+"))
     (define-peg integer-part (+ (range #\0 #\9)))
     (define-peg fractional-part (+ (range #\0 #\9)))
     (define-peg scientific-notation (and (or "e" "E") integer-part))
-    (define-peg
-     floating-point
-     (name
-      value
-      (and (? signal) (or (& integer-part) (& (and "." fractional-part))) (? integer-part) (? (and "." fractional-part)) (? scientific-notation)))
-     (string->number value))))
+    (define-peg floating-point (name value (and (? signal) integer-part (? (and "." fractional-part)) (? scientific-notation))) (string->number value))))
