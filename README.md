@@ -28,8 +28,8 @@ The PEG aspect is implemented in these files:
  
 Both of the above files are "bootstrapped" using the racket macro expander to produce the following:
 
-* `peg-in-peg-expanded.rkt` - expanded version of `peg-in-peg.rkt`.
-* `s-exp.rkt` - expanded version of `sexp-parser.rkt`.
+* `peg-in-peg.rkt` - expanded version of `peg-src/peg-in-peg.peg`.
+* `s-exp.rkt` - expanded version of `peg-src/s-exp.peg`.
 * `peg-to-scheme.rkt` - support for peg-in-peg.
 * `main.rkt` - This adds the `#lang peg` glue to racket.
 
