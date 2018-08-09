@@ -5,6 +5,7 @@ _ < [ \t\n]*;
 s-exp <-
   list /
   quote / quasiquote / unquote /
+  syntax-quote / syntax-quasiquote / syntax-unquote /
   boolean / number / identifier / character / string;
 
 list <- '(' _ lst:(s-exp _)*
@@ -14,9 +15,12 @@ list <- '(' _ lst:(s-exp _)*
             (append lst back)
             lst);
 
-quote      <- '\'' _ s:s-exp -> (list 'quote s);
-quasiquote <- '`' _ s:s-exp  -> (list 'quasiquote s);
-unquote    <- ',' _ s:s-exp  -> (list 'unquote s);
+quote             <- '\''  _ s:s-exp -> (list 'quote s);
+quasiquote        <- '`'   _ s:s-exp -> (list 'quasiquote s);
+unquote           <- ','   _ s:s-exp -> (list 'unquote s);
+syntax-quote      <- '#\'' _ s:s-exp -> (list 'syntax s);
+syntax-quasiquote <- '#`'  _ s:s-exp -> (list 'quasisyntax s);
+syntax-unquote    <- '#,'  _ s:s-exp -> (list 'unsyntax s);
 
 boolean    <- x:'#t' / x:'#f'               -> (equal? "#t" x);
 identifier <- s:[^. \t\n()\[\]{}",'`;#|\\]+      -> (string->symbol s);

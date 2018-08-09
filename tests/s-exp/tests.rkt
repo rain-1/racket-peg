@@ -39,6 +39,11 @@
  (s-exp->scheme (peg s-exp "'``'`'x"))
  ''``'`'x)
 
+;; syntax quotes
+(check-equal?
+  (peg s-exp "#`(#,foo #,(list #'bar bar))")
+  '#`(#,foo #,(list #'bar bar)))
+
 ;; + and numbers
 (check-equal?
  (s-exp->scheme (peg s-exp "(+ 1 2)"))
