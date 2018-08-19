@@ -38,7 +38,7 @@
       (("<--") 'define-peg/tag)
       (else (error 'peg->scheme:grammar "~s" op))))
   (match p
-    (`(import "import" ,s-exp ";")
+    (`(import ,s-exp ";")
      s-exp)
     (`(rule (name . ,nt) ,op ,pat ";")
      (let ((op^ (op? op)))
