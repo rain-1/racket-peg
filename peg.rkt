@@ -231,12 +231,14 @@
     (with-syntax ([nm nm]) #'(nm #f)))
   (syntax-case stx ()
     [(_ rule-name exp)
-     #'(define-peg rule-name exp #f)]
+     #'(define-peg rule-name exp #f #f)]
     [(_ rule-name exp action)
+     #'(define-peg rule-name exp action #t)]
+    [(_ rule-name exp action has-action?)
      (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)]
                    [bindings (map make-binding (peg-names #'exp))]
                    [body (peg-compile #'exp #'sk^)]
-                   [action (if (syntax-e #'action) #'action #'res)])
+                   [action (if (syntax-e #'has-action?) #'action #'res)])
        #'(define (name sk)
            (parameterize ([pegvm-current-rule 'name])
              (let* bindings
