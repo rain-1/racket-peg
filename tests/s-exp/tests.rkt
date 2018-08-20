@@ -63,4 +63,14 @@
   (s-exp->scheme (peg s-exp "(string->number bar)"))
   '(string->number bar))
 
-
+;; box lists
+(check-equal?
+ (s-exp->scheme (peg s-exp
+		     "(define (f l)
+                         (match
+                          [(list a b) a]
+                          [(list a) (list a 1)]))"))
+	       '(define (f l)
+		  (match
+		   [(list a b) a]
+		   [(list a) (list a 1)])))

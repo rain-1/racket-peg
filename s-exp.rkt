@@ -4,8 +4,9 @@
   (begin
     (define char-table '(("null" . #\nul) ("nul" . #\nul) ("backspace" . #\backspace) ("tab" . #\tab) ("newline" . #\newline) ("vtab" . #\vtab) ("page" . #\page) ("return" . #\return) ("space" . #\space) ("rubout" . #\rubout)))
     (define-peg/drop _ (* (or #\space #\tab #\newline)))
-    (define-peg s-exp (or list quote quasiquote unquote syntax-quote syntax-quasiquote syntax-unquote boolean number identifier character string))
+    (define-peg s-exp (or list box-list quote quasiquote unquote syntax-quote syntax-quasiquote syntax-unquote boolean number identifier character string))
     (define-peg list (and "(" _ (name lst (* (and s-exp _))) (? (and (name dotted-pair ".") _ (name back s-exp))) ")") (if dotted-pair (append lst back) lst))
+    (define-peg box-list (and "[" _ (name lst (* (and s-exp _))) (? (and (name dotted-pair ".") _ (name back s-exp))) "]") (if dotted-pair (append lst back) lst))
     (define-peg quote (and "'" _ (name s s-exp)) (list 'quote s))
     (define-peg quasiquote (and "`" _ (name s s-exp)) (list 'quasiquote s))
     (define-peg unquote (and "," _ (name s s-exp)) (list 'unquote s))
