@@ -95,6 +95,8 @@
      (peg->scheme:pattern pat))
     (`(primary . ".")
      `(any-char))
+    (`(primary literal)
+     "")
     (`(primary literal . ,lit)
      lit)
     (`(primary charclass "^" . ,cc)
