@@ -2,6 +2,7 @@
   (provide (all-defined-out))
   (require peg/peg)
   (begin
+    (define char-table '(("null" . #\nul) ("nul" . #\nul) ("backspace" . #\backspace) ("tab" . #\tab) ("newline" . #\newline) ("vtab" . #\vtab) ("page" . #\page) ("return" . #\return) ("space" . #\space) ("rubout" . #\rubout)))
     (define-peg/drop _ (* (or #\space #\tab #\newline)))
     (define-peg s-exp (or list quote quasiquote unquote syntax-quote syntax-quasiquote syntax-unquote boolean number identifier character string))
     (define-peg list (and "(" _ (name lst (* (and s-exp _))) (? (and (name dotted-pair ".") _ (name back s-exp))) ")") (if dotted-pair (append lst back) lst))
@@ -18,10 +19,7 @@
     (define-peg character (and (drop "#\\") (name v code)) v)
     (define-peg alphabetic (name v (or (range #\a #\z) (range #\A #\Z))) (string-ref v 0))
     (define-peg code (or named-char alphabetic-code digit))
-    (define-peg
-     named-char
-     (and (name nm (or "null" "nul" "backspace" "tab" "newline" "tab" "vtab" "page" "return" "space" "rubout")) (! alphabetic))
-     (cdr (assoc nm '(("null" . #\nul) ("nul" . #\nul) ("backspace" . #\backspace) ("tab" . #\tab) ("newline" . #\newline) ("vtab" . #\vtab) ("page" . #\page) ("return" . #\return) ("space" . #\space) ("rubout" . #\rubout)))))
+    (define-peg named-char (and (name nm (or "null" "nul" "backspace" "tab" "newline" "tab" "vtab" "page" "return" "space" "rubout")) (! alphabetic)) (cdr (assoc nm char-table)))
     (define-peg alphabetic-code (and (name v alphabetic) (! alphabetic)) v)
     (define-peg digit (name v (range #\0 #\9)) (string-ref v 0))
     (define-peg signal (or "-" "+"))

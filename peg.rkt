@@ -78,8 +78,18 @@
 (define (pegvm-update-best-error!)
   (when (or (not (unbox (pegvm-best-failure)))
             (> (unbox (pegvm-input-position)) (car (unbox (pegvm-best-failure)))))
-    (set-box! (pegvm-best-failure) (list (unbox (pegvm-input-position)) (pegvm-current-rule) (pegvm-current-choice)))))
+    (let ((pos (unbox (pegvm-input-position))))
+      (set-box! (pegvm-best-failure) (list pos (pegvm-current-rule) (pegvm-current-choice))))))
 
+(define (calculate-line-and-column str pos)
+  (let ((line 1)
+	(col 0))
+    (for ((chr (in-string str 0 pos)))
+	 (if (equal? chr #\newline)
+	     (begin (set! line (+ line 1))
+		    (set! col 0))
+	     (begin (set! col (+ 1 col)))))
+    `(line ,line column ,col)))
 
 ;;;;
 ;; peg compiler
@@ -279,7 +289,7 @@
                             (newline))
                           (error 'peg "parse failed in rule ~a at location ~a with options ~v"
                                  (cadr (unbox (pegvm-best-failure)))
-                                 (car (unbox (pegvm-best-failure)))
+				 (calculate-line-and-column (pegvm-input-text) (car (unbox (pegvm-best-failure))))
                                  (caddr (unbox (pegvm-best-failure)))
                                  )))
              (success-cont peg-result->object))
