@@ -19,7 +19,7 @@ The generated code parses text by interacting with the "PEG VM", which is a set 
 
 @subsection{define-peg}
 
-@defform[(define-peg name rule)
+@defform[#:link-target? #f (define-peg name rule)
   #:grammar ([<rule>
               (code:line (epsilon) (code:comment "always succeeds"))
 	      (code:line (char c) (code:comment "matches the character c"))
@@ -40,25 +40,25 @@ The generated code parses text by interacting with the "PEG VM", which is a set 
 Defines a new scheme function named @racket[peg-rule:name] by compiling the peg rule into scheme code that interacts with the PEG VM.
 }
 
-@defform[(define-peg name rule action)]{
+@defform[#:link-target? #f (define-peg name rule action)]{
 Same as above, but also performs a semantic action to produce its result. Semantic actions are regular scheme expressions, they can refer to variables named by a @racket[capture].
 }
 
 We also provide shorthands for some common semantic actions:
 
-@defform[(define-peg/drop name rule)]{
+@defform[#:link-target? #f (define-peg/drop name rule)]{
 @code{= (define-peg rule-name (drop rule))}
 
 makes the parser produce no result.
 }
 
-@defform[(define-peg/bake name rule)]{
+@defform[#:link-target? #f (define-peg/bake name rule)]{
 @code{= (define-peg rule-name (name res rule) res)}
 
 transforms the peg-result into a scheme object.
 }
 
-@defform[(define-peg/tag name rule)]{
+@defform[#:link-target? #f (define-peg/tag name rule)]{
 @code{= (define-peg rule-name (name res exp) `(rule-name . ,res))}
 
 tags the result with the peg rule name. Useful for parsers that create an AST.
@@ -66,7 +66,7 @@ tags the result with the peg rule name. Useful for parsers that create an AST.
 
 @subsection{peg}
 
-@defform[(peg rule input-text)]{
+@defform[#:link-target? #f (peg rule input-text)]{
 Run a PEG parser. Attempt to parse the @racket[input-text] string using the given @racket[rule]. This is sets up the PEG VM registers into an initial state and then calls into the parser for @racket[rule].
 }
 
