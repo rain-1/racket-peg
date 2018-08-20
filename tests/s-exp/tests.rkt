@@ -74,3 +74,15 @@
 		  (match
 		   [(list a b) a]
 		   [(list a) (list a 1)])))
+
+(check-equal?
+ (s-exp->scheme (peg s-exp
+ "(struct add (a b) #:transparent)"))
+ '(struct add (a b) #:transparent))
+
+(check-equal?
+ (s-exp->scheme (peg s-exp
+ "(define (my-sort lst #:comparator [cmp <])
+             (sort lst cmp))"))
+ '(define (my-sort lst #:comparator [cmp <])
+    (sort lst cmp)))

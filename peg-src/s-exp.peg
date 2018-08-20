@@ -12,13 +12,16 @@
     ("space" . #\space)
     ("rubout" . #\rubout)));
 
+(define (symbol->keyword sym)
+ (string->keyword (symbol->string sym)));
+
 _ < [ \t\n]*;
 
 s-exp <-
   list / box-list /
   quote / quasiquote / unquote /
   syntax-quote / syntax-quasiquote / syntax-unquote /
-  boolean / number / identifier / character / string;
+  boolean / number / identifier / keyword / character / string;
 
 list <- '(' _ lst:(s-exp _)*
         (dotted-pair:'.' _ back:s-exp)?
@@ -43,7 +46,8 @@ syntax-quasiquote <- '#`'  _ s:s-exp -> (list 'quasisyntax s);
 syntax-unquote    <- '#,'  _ s:s-exp -> (list 'unsyntax s);
 
 boolean    <- x:'#t' / x:'#f'               -> (equal? "#t" x);
-identifier <- s:[^. \t\n()\[\]{}",'`;#|\\]+      -> (string->symbol s);
+identifier <- s:[^. \t\n()\[\]{}",'`;#|\\]+ -> (string->symbol s);
+keyword    <- '#:' s:identifier             -> (symbol->keyword s);
 number     <- floating-point;
 string     <- ["] s:([^"\\] / ~[\\] .)* ["] -> s;
 
