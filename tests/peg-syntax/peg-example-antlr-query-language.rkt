@@ -1,6 +1,6 @@
 #lang peg
 
-import peg-example-float.rkt ;
+(require "peg-example-float.rkt") ;
 
 // based on https://notes.kartashov.com/2016/01/30/writing-a-simple-query-language-with-antlr/
 

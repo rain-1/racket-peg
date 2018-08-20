@@ -1,6 +1,6 @@
 #lang peg
 
-import peg-example-expr.rkt ;
+(require "peg-example-expr.rkt") ;
 
 
 //based on grammar

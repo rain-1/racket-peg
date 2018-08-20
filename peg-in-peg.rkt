@@ -19,4 +19,4 @@
     (define-peg cc-char (or (and (! cc-escape-char) (any-char)) "n" "t"))
     (define-peg cc-escape-char (or "[" "]" "-" "^" "\\" "n" "t"))
     (define-peg/tag peg (and _ (* import) (+ rule)))
-    (define-peg/tag import (and "import" _ name ";" _))))
+    (define-peg/tag import (and s-exp _ ";" _))))

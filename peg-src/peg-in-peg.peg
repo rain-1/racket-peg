@@ -1,6 +1,6 @@
 #lang peg
 
-import s-exp.rkt;
+(require "s-exp.rkt");
 
 _ < ([ \t\n] / '//' [^\n]*)*;
 SLASH < '/' _;
@@ -23,4 +23,4 @@ cc-char <- !cc-escape-char . / 'n' / 't';
 cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't';
 
 peg <-- _ import* rule+;
-import <-- 'import' _ name ';' _;
+import <-- s-exp _ ';' _;
