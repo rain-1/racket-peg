@@ -78,15 +78,15 @@ For a simple example, lets try splitting a sentence into words. We can describe 
 
 @codeblock{
 > (require peg)
-> (define *sentence* "the quick brown fox jumps over the lazy dog")
+> (define sentence "the quick brown fox jumps over the lazy dog")
 > (define-peg non-space
     (and (! #\space) (any-char)))
 > (define-peg/bake word
     (and (+ non-space)
          (drop (? #\space))))
-> (peg word *sentence*)
+> (peg word sentence)
 "the"
-> (peg (+ word) *sentence*)
+> (peg (+ word) sentence)
 '("the" "quick" "brown" "fox" "jumps" "over" "the" "lazy" "dog")
 }
 
@@ -94,7 +94,7 @@ Using the peg lang, the example above is equal to
 @codeblock{
 #lang peg
 
-(define *sentence* "the quick brown fox jumps over the lazy dog") //yes, we can use
+(define sentence "the quick brown fox jumps over the lazy dog") //yes, we can use
 //one-line comments and any sequence of s-exps BEFORE the grammar definition
 
 non-space <- (! #\space) . ; //the dot is "any-char" in peg
