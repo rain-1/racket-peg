@@ -94,11 +94,11 @@ Using the peg lang, the example above is equal to
 @codeblock{
 #lang peg
 
-(define sentence "the quick brown fox jumps over the lazy dog") //yes, we can use
+(define sentence "the quick brown fox jumps over the lazy dog"); //yes, we can use
 //one-line comments and any sequence of s-exps BEFORE the grammar definition
 
-non-space <- (! #\space) . ; //the dot is "any-char" in peg
-word <- c:(non-space+ ~(#\space ?)) -> c ; //the ~ is drop
+non-space <- (! ' ') . ; //the dot is "any-char" in peg
+word <- c:(non-space+ ~(' ' ?)) -> c ; //the ~ is drop
 //we can use ident:peg to act as (name ident peg).
 //and rule <- exp -> action is equal to (define-peg rule exp action)
 //with this in a file, we can use the repl of drracket to do exactly the
