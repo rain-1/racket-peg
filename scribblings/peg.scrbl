@@ -90,6 +90,24 @@ For a simple example, lets try splitting a sentence into words. We can describe 
 '("the" "quick" "brown" "fox" "jumps" "over" "the" "lazy" "dog")
 }
 
+Using the peg lang, the example above is equal to
+@codeblock{
+#lang peg
+
+(define *sentence* "the quick brown fox jumps over the lazy dog") //yes, we can use
+//one-line comments and any sequence of s-exps BEFORE the grammar definition
+
+non-space <- (! #\space) . ; //the dot is "any-char" in peg
+word <- c:(non-space+ ~(#\space ?)) -> c ; //the ~ is drop
+//we can use ident:peg to act as (name ident peg).
+//and rule <- exp -> action is equal to (define-peg rule exp action)
+//with this in a file, we can use the repl of drracket to do exactly the
+//uses of peg above.
+
+
+}
+
+
 @subsection{Example 2}
 
 Here is a simple calculator example that demonstrates semantic actions and recursive rules.
@@ -105,13 +123,13 @@ Here is a simple calculator example that demonstrates semantic actions and recur
   (if v2 (* v1 v2) v1))
 }
 
-this grammar(without semantic actions) is equivalenty to :
+this grammar in peg lang is equivalenty to :
 
 @codeblock{
 	#lang peg
-	number <-- res:[0-9]+ ;
-	sum <-- v1:prod ('+' v2:sum)? ;
-	prod <-- v1:number ('*' v2:prod)? ;
+	number <- res:[0-9]+ -> (string->number res);
+	sum <- v1:prod ('+' v2:sum)? -> (if v2 (+ v1 v2) v1);
+	prod <- v1:number ('*' v2:prod)? -> (if v2 (* v1 v2) v1);
 }
 
 Usage:
@@ -188,3 +206,5 @@ cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't';
 peg <-- _ import* rule+;
 import <-- 'import' _ name ';' _;
 }
+
+Note: When you match the empty string in peg lang, you match a empty list, not a empty string, be carefull.
