@@ -178,6 +178,8 @@ This package also provides a @racket{#lang peg} alternative, to allow you to mak
 
 The best way to understand the PEG syntax would be by reference to examples, there are many simple examples in the racket peg repo and the follow is the actual grammar used by racket-peg to implemet the peg lang:
 
+Note: When you match the empty string in peg lang, you match a empty list, not a empty string, be carefull.
+
 @verbatim{
 #lang peg
 
@@ -206,5 +208,3 @@ cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't';
 peg <-- _ import* rule+;
 import <-- 'import' _ name ';' _;
 }
-
-Note: When you match the empty string in peg lang, you match a empty list, not a empty string, be carefull.
