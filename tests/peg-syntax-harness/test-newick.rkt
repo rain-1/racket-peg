@@ -1,5 +1,6 @@
 #lang racket
 
+(require peg)
 (require rackunit)
 
 (require "../peg-syntax/peg-example-newick.rkt")
