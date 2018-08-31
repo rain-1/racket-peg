@@ -47,7 +47,7 @@ syntax-unquote    <- '#,'  _ s:s-exp -> (list 'unsyntax s);
 
 boolean    <- x:'#t' / x:'#f'               -> (equal? "#t" x);
 identifier <- s:[^. \t\n()\[\]{}",'`;#|\\]+ -> (string->symbol s);
-dotdotdot  <- '...'                         -> (string->symbol "...");
+dotdotdot  <- '...'                         -> '...;
 keyword    <- '#:' s:identifier             -> (symbol->keyword s);
 number     <- floating-point;
 string     <- ["] s:([^"\\] / ~[\\] .)* ["] -> s;

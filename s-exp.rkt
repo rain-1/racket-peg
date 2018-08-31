@@ -16,7 +16,7 @@
     (define-peg syntax-unquote (and "#," _ (name s s-exp)) (list 'unsyntax s))
     (define-peg boolean (or (name x "#t") (name x "#f")) (equal? "#t" x))
     (define-peg identifier (name s (+ (and (! (or #\. #\space #\tab #\newline #\( #\) #\[ #\] #\{ #\} #\" #\, #\' #\` #\; #\# #\| #\\)) (any-char)))) (string->symbol s))
-    (define-peg dotdotdot "..." (string->symbol "..."))
+    (define-peg dotdotdot "..." '...)
     (define-peg keyword (and "#:" (name s identifier)) (symbol->keyword s))
     (define-peg number floating-point)
     (define-peg string (and #\" (name s (* (or (and (! (or #\" #\\)) (any-char)) (and (drop #\\) (any-char))))) #\") s)
