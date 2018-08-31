@@ -78,17 +78,35 @@ For a simple example, lets try splitting a sentence into words. We can describe 
 
 @codeblock{
 > (require peg)
-> (define *sentence* "the quick brown fox jumps over the lazy dog")
+> (define sentence "the quick brown fox jumps over the lazy dog")
 > (define-peg non-space
     (and (! #\space) (any-char)))
 > (define-peg/bake word
     (and (+ non-space)
          (drop (? #\space))))
-> (peg word *sentence*)
+> (peg word sentence)
 "the"
-> (peg (+ word) *sentence*)
+> (peg (+ word) sentence)
 '("the" "quick" "brown" "fox" "jumps" "over" "the" "lazy" "dog")
 }
+
+Using the peg lang, the example above is equal to
+@codeblock{
+#lang peg
+
+(define sentence "the quick brown fox jumps over the lazy dog"); //yes, we can use
+//one-line comments and any sequence of s-exps BEFORE the grammar definition
+
+non-space <- (! ' ') . ; //the dot is "any-char" in peg
+word <- c:(non-space+ ~(' ' ?)) -> c ; //the ~ is drop
+//we can use ident:peg to act as (name ident peg).
+//and rule <- exp -> action is equal to (define-peg rule exp action)
+//with this in a file, we can use the repl of drracket to do exactly the
+//uses of peg above.
+
+
+}
+
 
 @subsection{Example 2}
 
@@ -105,13 +123,13 @@ Here is a simple calculator example that demonstrates semantic actions and recur
   (if v2 (* v1 v2) v1))
 }
 
-this grammar(without semantic actions) is equivalenty to :
+this grammar in peg lang is equivalenty to :
 
 @codeblock{
 	#lang peg
-	number <-- res:[0-9]+ ;
-	sum <-- v1:prod ('+' v2:sum)? ;
-	prod <-- v1:number ('*' v2:prod)? ;
+	number <- res:[0-9]+ -> (string->number res);
+	sum <- v1:prod ('+' v2:sum)? -> (if v2 (+ v1 v2) v1);
+	prod <- v1:number ('*' v2:prod)? -> (if v2 (* v1 v2) v1);
 }
 
 Usage:
@@ -159,6 +177,8 @@ This package also provides a @racket{#lang peg} alternative, to allow you to mak
 @subsection{PEG Syntax Reference}
 
 The best way to understand the PEG syntax would be by reference to examples, there are many simple examples in the racket peg repo and the follow is the actual grammar used by racket-peg to implemet the peg lang:
+
+Note: When you match the empty string in peg lang, you match a empty list, not a empty string, be carefull.
 
 @verbatim{
 #lang peg
