@@ -91,7 +91,7 @@ For a simple example, lets try splitting a sentence into words. We can describe 
 }
 
 Using the peg lang, the example above is equal to
-@codeblock{
+@verbatim{
 #lang peg
 
 (define sentence "the quick brown fox jumps over the lazy dog"); //yes, we can use
