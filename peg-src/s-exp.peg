@@ -21,7 +21,7 @@ s-exp <-
   list / box-list /
   quote / quasiquote / unquote /
   syntax-quote / syntax-quasiquote / syntax-unquote /
-  boolean / number / identifier / keyword / character / string;
+  boolean / number / identifier / dotdotdot / keyword / character / string;
 
 list <- '(' _ lst:(s-exp _)*
         (dotted-pair:'.' _ back:s-exp)?
@@ -47,6 +47,7 @@ syntax-unquote    <- '#,'  _ s:s-exp -> (list 'unsyntax s);
 
 boolean    <- x:'#t' / x:'#f'               -> (equal? "#t" x);
 identifier <- s:[^. \t\n()\[\]{}",'`;#|\\]+ -> (string->symbol s);
+dotdotdot  <- '...'                         -> '...;
 keyword    <- '#:' s:identifier             -> (symbol->keyword s);
 number     <- floating-point;
 string     <- ["] s:([^"\\] / ~[\\] .)* ["] -> s;
