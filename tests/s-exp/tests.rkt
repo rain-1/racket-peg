@@ -94,3 +94,18 @@
 (check-equal?
  (peg s-exp "\"abc\\tdef\"")
  "abc\tdef")
+
+;; a test for the special ... symbol
+
+(check-equal?
+ (peg s-exp
+"(define (eval-rpn l [aux '()])
+  (match l
+    ['() (car aux)]
+    [(list (? number? a) b ...) (eval-rpn (cdr l) (cons (car l) aux))]
+    [(list a b ...) (eval-rpn (cdr l) (cons (a (car aux) (cadr aux)) (cddr aux)))]))")
+'(define (eval-rpn l [aux '()])
+  (match l
+    ['() (car aux)]
+    [(list (? number? a) b ...) (eval-rpn (cdr l) (cons (car l) aux))]
+    [(list a b ...) (eval-rpn (cdr l) (cons (a (car aux) (cadr aux)) (cddr aux)))])))
