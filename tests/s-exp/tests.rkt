@@ -86,3 +86,11 @@
              (sort lst cmp))"))
  '(define (my-sort lst #:comparator [cmp <])
     (sort lst cmp)))
+
+;; newline and tab escapes
+(check-equal?
+ (peg s-exp "\"abc\\ndef\"")
+ "abc\ndef")
+(check-equal?
+ (peg s-exp "\"abc\\tdef\"")
+ "abc\tdef")

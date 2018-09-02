@@ -1,5 +1,7 @@
 #lang peg
 
+(require "peg-result.rkt");
+
 (define char-table
   '(("null" . #\null)
     ("nul" . #\null)
@@ -50,7 +52,11 @@ identifier <- s:[^. \t\n()\[\]{}",'`;#|\\]+ -> (string->symbol s);
 dotdotdot  <- '...'                         -> '...;
 keyword    <- '#:' s:identifier             -> (symbol->keyword s);
 number     <- floating-point;
-string     <- ["] s:([^"\\] / ~[\\] .)* ["] -> s;
+string     <- ["] s:([^"\\] / escaped-char)* ["] -> s;
+
+escaped-char <- escaped-newline / escaped-tab / ~[\\] .;
+escaped-newline <- [\\] 'n' -> (peg-result "\n");
+escaped-tab     <- [\\] 't' -> (peg-result "\t");
 
 character <- ~'#\\' v:code -> v;
 alphabetic <- v:[a-zA-Z] -> (string-ref v 0);
