@@ -26,6 +26,22 @@
 
 (define (peg->scheme p)
   (match p
+    (`((first (name ,identifier)) (peg . ,grammars))
+     `(begin
+	(provide (rename-out [literal-read read]
+                     [literal-read-syntax read-syntax]))
+	(define (literal-read in)
+	  (syntax->datum
+	   (literal-read-syntax #f in)))
+
+	(define (literal-read-syntax src in)
+	  (with-syntax ([body (peg (and ,(string->symbol identifier) (! (any-char))) (port->string in))])
+	    (strip-context
+	     #'(module anything racket
+	         (provide (all-defined-out))
+	         (require peg/peg)
+	         body))))
+     	. ,(map peg->scheme:grammar grammars)))
     (`(peg . ,grammars)
      `(begin . ,(map peg->scheme:grammar grammars)))
     (else (error 'peg->scheme "~s" p))))
