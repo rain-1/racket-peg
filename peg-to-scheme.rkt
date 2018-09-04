@@ -42,6 +42,8 @@
 	         (require peg/peg)
 	         body))))
      	,(map peg->scheme:grammar grammars)))
+    (`(peg . ,grammars)
+	`(begin ,(map peg->scheme:grammar grammars)))
     (else (error 'peg->scheme "~s" p))))
 
 (define (peg->scheme:grammar p)
