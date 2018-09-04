@@ -35,7 +35,7 @@
 	   (literal-read-syntax #f in)))
 
 	(define (literal-read-syntax src in)
-	  (with-syntax ([body (peg (and ,identifier (! (any-char))) (port->string in))])
+	  (with-syntax ([body (peg (and ,(string->symbol identifier) (! (any-char))) (port->string in))])
 	    (strip-context
 	     #'(module anything racket
 	         (provide (all-defined-out))
