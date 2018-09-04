@@ -26,7 +26,7 @@
 
 (define (peg->scheme p)
   (match p
-    (`((first . (name ,identifier)) (peg . ,grammars))
+    (`((first (name ,identifier)) (peg . ,grammars))
      `(begin
 	(provide (rename-out [literal-read read]
                      [literal-read-syntax read-syntax]))
@@ -41,7 +41,7 @@
 	         (provide (all-defined-out))
 	         (require peg/peg)
 	         body))))
-     	,(map peg->scheme:grammar grammars)))
+     	. ,(map peg->scheme:grammar grammars)))
     (`(peg . ,grammars)
      `(begin . ,(map peg->scheme:grammar grammars)))
     (else (error 'peg->scheme "~s" p))))

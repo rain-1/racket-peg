@@ -21,6 +21,8 @@
   (peg->scheme (car
                   (peg-result->object (peg (and first peg (! (any-char))) (port->string in))))))
 
+(display (peg first "first abc ;"))
+
 (define (literal-read in)
   (syntax->datum
    (literal-read-syntax #f in)))
