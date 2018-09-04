@@ -19,9 +19,7 @@
 
 (define (peg-port->scheme in)
   (peg->scheme (car
-                  (peg-result->object (peg (and first peg (! (any-char))) (port->string in))))))
-
-(display (peg first "first abc ;"))
+                  (peg-result->object (peg (and _ first peg (! (any-char))) (port->string in))))))
 
 (define (literal-read in)
   (syntax->datum
