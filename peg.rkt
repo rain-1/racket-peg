@@ -45,6 +45,8 @@
 ;;;;
 ;; pegvm registers and dynamic control
 
+
+(define pegvm-verbose (make-parameter #f))
 (define pegvm-input-text (make-parameter #f))      ;; The input string being parsed
 (define pegvm-input-position (make-parameter #f))  ;; The position inside the string
 (define pegvm-control-stack (make-parameter #f))   ;; For or control flow
@@ -281,7 +283,8 @@
 
 (define-syntax (peg stx)
   (syntax-case stx ()
-    [(_ exp str)
+    [(_ exp str) #'(peg exp str #f)]
+    [(_ exp str v)
      #'(let ((fail-cont (lambda ()
                           (let ((loc (car (unbox (pegvm-best-failure)))))
                             (display (string-replace (string-replace (copy-and-pad-substring (pegvm-input-text) (- loc 10) (+ loc 10))
@@ -301,5 +304,6 @@
                         [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
                         [pegvm-stashed-stacks (box '())]
                         [pegvm-negation? (box 0)]
-                        [pegvm-best-failure (box #f)])
+                        [pegvm-best-failure (box #f)]
+			[pegvm-verbose v])
            (peg-rule:local success-cont)))]))

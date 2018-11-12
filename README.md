@@ -4,13 +4,15 @@ This library implements a PEG parser generator.
 
 ## Getting Started
 
-* Run `make install` to install the peg library. You should be able to `(require peg)` in your own racket programs after that. Or use `#lang peg`!
+* run `chmod +x ./make` to turn ./make executable
 
-* Run `make update` to apply changes, if you're hacking on it.
+* Run `./make install` to install the peg library. You should be able to `(require peg)` in your own racket programs after that. Or use `#lang peg`!
 
-* Run `make docs` to build the documentation.
+* Run `./make update` to apply changes, if you're hacking on it.
 
-* Run `make test` to check that it is working after installation.
+* Run `./make docs` to build the documentation.
+
+* Run `./make test` to check that it is working after installation.
 
 ## Source Code Map
 
