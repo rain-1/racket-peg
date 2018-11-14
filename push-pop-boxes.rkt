@@ -1,6 +1,5 @@
-#lang racket
-
-(provide push! pop!)
+(define-module (racket-peg push-pop-boxes)
+  #:export (push! pop!))
 
 ;;;;
 ;; push and pop for boxes
