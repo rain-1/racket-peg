@@ -9,7 +9,7 @@
 
 ;;;;;;;;;;
 
-; (begin (load "push-pop-boxes.rkt") (load "peg-result.rkt") (load "peg.rkt"))
+; (begin (load "push-pop-boxes.scm") (load "peg-result.scm") (load "peg.scm"))
 ; (use-modules (racket-peg peg))
 ; 
 ; scheme@(guile-user)> (peg (+ word) *sentence*)
@@ -21,8 +21,8 @@
 
 ;(require (for-syntax racket/syntax))
 
-;(require "push-pop-boxes.rkt")
-;(require "peg-result.rkt")
+;(require "push-pop-boxes.scm")
+;(require "peg-result.scm")
 
 ;;;;
 ;; generic utility functions
