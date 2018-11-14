@@ -1,21 +1,23 @@
-#lang racket
-
-(provide seq-elt seq-elt-object
-         seq-cat seq-cat-subseqs
-         seq?
-         empty-sequence empty-sequence?
-         seq->dlist seq->list
-         
-         peg-result peg-result-str
-         
-         peg-result-join
-         peg-result->object)
+(define-module (racket-peg peg-result)
+  #:use-module (srfi srfi-9)
+  #:export (seq-elt seq-elt-object
+		    seq-cat seq-cat-subseqs
+		    seq?
+		    empty-sequence empty-sequence?
+		    seq->dlist seq->list
+		    
+		    peg-result peg-result-str
+		    
+		    peg-result-join
+		    peg-result->object))
 
 ;;;;
 ;; sequences
 
-(struct seq-elt (object) #:transparent)
-(struct seq-cat (subseqs) #:transparent)
+(define-record-type <seq-elt> (seq-elt object) seq-elt?
+		    (object seq-elt-object))
+(define-record-type <seq-cat> (seq-cat subseqs) seq-cat?
+		    (subseqs seq-cat-subseqs))
 (define (seq? x) (or (seq-elt? x) (seq-cat? x)))
 
 (define empty-sequence (seq-cat '()))
@@ -76,7 +78,8 @@ represents a string, not a length 1 list with a string in it.
 
 |#
 
-(struct peg-result (str) #:transparent)
+(define-record-type <peg-result> (peg-result str) peg-result?
+		    (str peg-result-str))
 
 (define (peg-result-append x y)
   (peg-result (string-append (peg-result-str x) (peg-result-str y))))
@@ -110,4 +113,5 @@ represents a string, not a length 1 list with a string in it.
         (else
          (cons (peg-result->object (car lst))
                (concat-peg-result-strings #f (cdr lst))))))
+
 
