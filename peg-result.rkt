@@ -1,4 +1,5 @@
 (define-module (racket-peg peg-result)
+  #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:export (seq-elt seq-elt-object
 		    seq-cat seq-cat-subseqs
@@ -10,6 +11,8 @@
 		    
 		    peg-result-join
 		    peg-result->object))
+
+(define foldr fold-right)
 
 ;;;;
 ;; sequences
