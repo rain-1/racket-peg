@@ -1,19 +1,24 @@
-#lang racket
+(define-module (racket-peg peg-result)
+  #:use-module (srfi srfi-9)
+  #:use-module (srfi srfi-111)
+  #:use-module (racket-peg push-pop-boxes)
+  #:use-module (racket-peg peg-result)
+  #:export (define-peg
+             define-peg/bake define-peg/drop define-peg/tag
+             peg))
 
-(provide define-peg
-         define-peg/bake define-peg/drop define-peg/tag
-         peg)
+;; (begin (load "push-pop-boxes.rkt") (load "peg-result.rkt") (load "peg.rkt"))
 
-(require (for-syntax racket/syntax))
+;(require (for-syntax racket/syntax))
 
-(require "push-pop-boxes.rkt")
-(require "peg-result.rkt")
+;(require "push-pop-boxes.rkt")
+;(require "peg-result.rkt")
 
 ;;;;
 ;; generic utility functions
 
 (define (char->string ch) (list->string (list ch)))
-(define (string-contains-char? str ch) (string-contains? str (char->string ch)))
+(define (string-contains-char? str ch) (string-contains str (char->string ch)))
 (define (string-contains-substring? str place contained)
   (and (>= (string-length str) (+ place (string-length contained)))
        (string=? (substring str place (+ place (string-length contained)))
@@ -21,6 +26,10 @@
 (define (char-between? x c1 c2)
   (and (<= (char->integer c1) (char->integer x))
        (<= (char->integer x) (char->integer c2))))
+
+(define (format-id prefix thing _)
+  (gensym (string-append (symbol->string prefix) thing)))
+(define syntax-e syntax->datum)
 
 ;;;;
 ;; peg s-exp syntax
@@ -55,7 +64,9 @@
 (define pegvm-current-rule (make-parameter #f))
 (define pegvm-current-choice (make-parameter #f))
 
-(struct control-frame (position label) #:transparent)
+(define-record-type <control-frame> (control-frame position label) control-frame?
+		    (position control-frame-position)
+		    (label control-frame-label))
 
 (define (pegvm-eof?) (= (string-length (pegvm-input-text)) (unbox (pegvm-input-position))))
 (define (pegvm-peek) (string-ref (pegvm-input-text) (unbox (pegvm-input-position))))
@@ -84,12 +95,16 @@
 (define (calculate-line-and-column str pos)
   (let ((line 1)
 	(col 0))
-    (for ((chr (in-string str 0 pos)))
+    (string-for-each-index
+     (lambda (pos)
+       (let ((chr (string-ref str pos)))
+;    (for ((chr (in-string str 0 pos)))
 	 (if (equal? chr #\newline)
 	     (begin (set! line (+ line 1))
 		    (set! col 0))
 	     (begin (set! col (+ 1 col)))))
-    `(line ,line column ,col)))
+       `(line ,line column ,col))
+     str)))
 
 ;;;;
 ;; peg compiler
@@ -106,6 +121,11 @@
     [(name nm subexp) (cons #'nm (peg-names #'subexp))]
     [(drop e1 ...) (peg-names #'(and e1 ...))]
     [else '()]))
+
+(define-syntax define-for-syntax
+  (syntax-rules ()
+    ((define-for-syntax . rest)
+     (define . rest))))
 
 (define-for-syntax (peg-compile exp sk)
   (define (single-char-pred sk x cond)
@@ -130,7 +150,7 @@
        (single-char-pred #'sk #'x #'(char-between? x c1 c2))]
       [(string str)
        (with-syntax ([str-len (string-length (syntax->datum #'str))])
-         #'(if (string-contains-substring? (pegvm-input-text) (unbox (pegvm-input-position)) str)
+         #'(if (string-contains (pegvm-input-text) str (unbox (pegvm-input-position)))
                (begin (pegvm-advance! str-len)
                       (sk (peg-result str)))
                (pegvm-fail)))]
@@ -224,35 +244,39 @@
            (cond ((char? shorthand) (peg-compile #`(char #,exp) #'sk))
                  ((string? shorthand) (peg-compile #`(string #,exp) #'sk))
                  ((symbol? shorthand) (peg-compile #`(call #,exp) #'sk))
-                 (else (raise-syntax-error "invalid peg" (syntax->datum exp)))))])))
+                 (else (error "invalid peg" (syntax->datum exp)))))])))
 
-(define-syntax (define-peg stx)
-  (define (make-binding nm)
-    (with-syntax ([nm nm]) #'(nm #f)))
-  (syntax-case stx ()
-    [(_ rule-name exp)
-     #'(define-peg rule-name exp #f #f)]
-    [(_ rule-name exp action)
-     #'(define-peg rule-name exp action #t)]
-    [(_ rule-name exp action has-action?)
-     (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)]
-                   [bindings (map make-binding (peg-names #'exp))]
-                   [body (peg-compile #'exp #'sk^)]
-                   [action (if (syntax-e #'has-action?) #'action #'res)])
-       #'(define (name sk)
-           (parameterize ([pegvm-current-rule 'name])
-             (let* bindings
-               (let ((sk^ (lambda (res) (sk action))))
-                 body)))))]))
+(define-syntax define-peg
+  (lambda (stx)
+    (define (make-binding nm)
+      (with-syntax ([nm nm]) #'(nm #f)))
+    (syntax-case stx ()
+      [(_ rule-name exp)
+       #'(define-peg rule-name exp #f #f)]
+      [(_ rule-name exp action)
+       #'(define-peg rule-name exp action #t)]
+      [(_ rule-name exp action has-action?)
+       (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)]
+                     [bindings (map make-binding (peg-names #'exp))]
+                     [body (peg-compile #'exp #'sk^)]
+                     [action (if (syntax-e #'has-action?) #'action #'res)])
+		    #'(define (name sk)
+			(parameterize ([pegvm-current-rule 'name])
+			  (let* bindings
+			    (let ((sk^ (lambda (res) (sk action))))
+			      body)))))])))
 
-(define-syntax (define-peg/drop stx)
-  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (drop exp))]))
+(define-syntax define-peg/drop
+  (lambda (stx)
+    (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (drop exp))])))
 
-(define-syntax (define-peg/bake stx)
-  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) res)]))
+(define-syntax define-peg/bake
+  (lambda (stx)
+    (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) res)])))
 
-(define-syntax (define-peg/tag stx)
-  (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) (cons 'rule-name res))]))
+(define-syntax define-peg/tag
+  (lambda (stx)
+    (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) (cons 'rule-name res))])))
 
 (define (copy-and-pad-substring str a b)
   ;; pad with spaces
@@ -279,27 +303,28 @@
 ;(check-equal? (copy-and-pad-substring "abcdefghijklmnopqrstuvwxyz" 24 30)
 ;              "yz    ")
 
-(define-syntax (peg stx)
-  (syntax-case stx ()
-    [(_ exp str)
-     #'(let ((fail-cont (lambda ()
-                          (let ((loc (car (unbox (pegvm-best-failure)))))
-                            (display (string-replace (string-replace (copy-and-pad-substring (pegvm-input-text) (- loc 10) (+ loc 10))
-                                                                     "\n" "N") "\t" "T"))
-                            (newline)
-                            (display "          ^ here")
-                            (newline))
-                          (error 'peg "parse failed in rule ~a at location ~a with options ~v"
-                                 (cadr (unbox (pegvm-best-failure)))
-				 (calculate-line-and-column (pegvm-input-text) (car (unbox (pegvm-best-failure))))
-                                 (caddr (unbox (pegvm-best-failure)))
-                                 )))
-             (success-cont peg-result->object))
-         (define-peg local exp)
-         (parameterize ([pegvm-input-text str]
-                        [pegvm-input-position (box 0)]
-                        [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
-                        [pegvm-stashed-stacks (box '())]
-                        [pegvm-negation? (box 0)]
-                        [pegvm-best-failure (box #f)])
-           (peg-rule:local success-cont)))]))
+(define-syntax peg
+  (lambda (stx)
+    (syntax-case stx ()
+      [(_ exp str)
+       #'(let ((fail-cont (lambda ()
+                            (let ((loc (car (unbox (pegvm-best-failure)))))
+                              (display (string-replace (string-replace (copy-and-pad-substring (pegvm-input-text) (- loc 10) (+ loc 10))
+                                                                       "\n" "N") "\t" "T"))
+                              (newline)
+                              (display "          ^ here")
+                              (newline))
+                            (error 'peg "parse failed in rule ~a at location ~a with options ~v"
+                                   (cadr (unbox (pegvm-best-failure)))
+				   (calculate-line-and-column (pegvm-input-text) (car (unbox (pegvm-best-failure))))
+                                   (caddr (unbox (pegvm-best-failure)))
+                                   )))
+               (success-cont peg-result->object))
+           (define-peg local exp)
+           (parameterize ([pegvm-input-text str]
+                          [pegvm-input-position (box 0)]
+                          [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
+                          [pegvm-stashed-stacks (box '())]
+                          [pegvm-negation? (box 0)]
+                          [pegvm-best-failure (box #f)])
+             (peg-rule:local success-cont)))])))
