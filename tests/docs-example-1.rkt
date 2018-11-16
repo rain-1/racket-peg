@@ -1,7 +1,5 @@
-#lang racket
-
-(require peg)
-(require rackunit)
+(use-modules (racket-peg peg))
+(use-modules (racket-peg rackunit))
 
 (define *sentence* "the quick brown fox jumps over the lazy dog")
 
