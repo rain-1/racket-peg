@@ -9,8 +9,10 @@
        (unless (equal? x-val y-val)
 	 (write `(test failed x not equal to y))
 	 (newline)
-	 
-	 (write `(got ,x-val expected ,y-val))
+	 (newline)
+	 (write `(got--- ,x-val))
+	 (newline)
+	 (write `(wanted ,y-val))
 	 (newline)
 	 
 	 (exit 5))))))

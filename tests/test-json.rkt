@@ -1,6 +1,8 @@
 (use-modules (racket-peg peg) (racket-peg peg-result))
 (use-modules (racket-peg rackunit))
 
+(use-modules (racket-peg guile-heredoc))
+
 (define-peg/drop _ (* (or #\space #\tab #\newline)))
 
 (define-peg digit (or (char #\0) (call nonzero)))
