@@ -1,7 +1,5 @@
-#lang racket
-
-(require rackunit)
-(require peg)
+(use-modules (racket-peg peg) (racket-peg peg-result))
+(use-modules (racket-peg rackunit))
 
 (define-peg regex-range
   (and #\[ (? (name neg #\^)) (name res (* (or regex-range-range regex-range-single))) #\])

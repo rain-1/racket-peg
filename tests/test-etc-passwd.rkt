@@ -1,7 +1,5 @@
-#lang racket
-
-(require rackunit)
-(require peg)
+(use-modules (racket-peg peg) (racket-peg peg-result))
+(use-modules (racket-peg rackunit))
 
 ;; https://www.gnu.org/software/guile/manual/html_node/PEG-Tutorial.html#PEG-Tutorial
 

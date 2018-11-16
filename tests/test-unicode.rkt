@@ -1,8 +1,5 @@
-#lang racket
-
-(require rackunit)
-
-(require peg)
+(use-modules (racket-peg peg) (racket-peg peg-result))
+(use-modules (racket-peg rackunit))
 
 (define-peg u-chr (char #\λ))
 (check-equal? (peg u-chr "λ")

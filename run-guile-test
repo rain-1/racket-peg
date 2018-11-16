@@ -1,2 +1,4 @@
 #!/bin/sh
-guile -l push-pop-boxes.scm -l peg-result.scm -l peg.scm -l rackunit.scm "$1"
+echo "running test '$1'"
+guile -l push-pop-boxes.scm -l peg-result.scm -l peg.scm -l rackunit.scm "$1" && echo ok
+
