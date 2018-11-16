@@ -38,7 +38,7 @@
        (<= (char->integer x) (char->integer c2))))
 
 (define (format-id stx thing prefix)
-  (datum->syntax stx (string->symbol (string-append (symbol->string (syntax->datum prefix)) thing))))
+  (datum->syntax stx (string->symbol (string-append thing (symbol->string (syntax->datum prefix))))))
 (define syntax-e syntax->datum)
 
 ;;;;
@@ -160,7 +160,7 @@
        (single-char-pred #'sk #'x #'(char-between? x c1 c2))]
       [(string str)
        (with-syntax ([str-len (string-length (syntax->datum #'str))])
-         #'(if (string-contains (pegvm-input-text) str (unbox (pegvm-input-position)))
+         #'(if (string-contains-substring? (pegvm-input-text) (unbox (pegvm-input-position)) str)
                (begin (pegvm-advance! str-len)
                       (sk (peg-result str)))
                (pegvm-fail)))]
@@ -320,8 +320,9 @@
        (with-syntax ([peg-rule:local (format-id #'local "peg-rule:" #'local)])
 		    #'(let ((fail-cont (lambda ()
 					 (let ((loc (car (unbox (pegvm-best-failure)))))
-					   (display (string-replace (string-replace (copy-and-pad-substring (pegvm-input-text) (- loc 10) (+ loc 10))
-										    "\n" "N") "\t" "T"))
+;					   (display (string-replace (string-replace (copy-and-pad-substring (pegvm-input-text) (- loc 10) (+ loc 10))
+;										    "\n" "N") "\t" "T"))
+					   (display (copy-and-pad-substring (pegvm-input-text) (- loc 10) (+ loc 10)))
 					   (newline)
 					   (display "          ^ here")
 					   (newline))
