@@ -7,7 +7,7 @@
      (let ((x-val x)
 	   (y-val y))
        (unless (equal? x-val y-val)
-	 (write `(test failed ,x not equal to ,y))
+	 (write `(test failed x not equal to y))
 	 (newline)
 	 
 	 (write `(got ,x-val expected ,y-val))
