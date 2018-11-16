@@ -1,9 +1,5 @@
-#lang racket
-
-(require rackunit)
-
-(require peg)
-(require peg/peg-result)
+(use-modules (racket-peg peg) (racket-peg peg-result))
+(use-modules (racket-peg rackunit))
 
 ;; boolean logic grammar
 

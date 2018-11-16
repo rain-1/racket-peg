@@ -1,7 +1,5 @@
-#lang racket
-
-(require rackunit)
-(require peg)
+(use-modules (racket-peg peg))
+(use-modules (racket-peg rackunit))
 
 (define-peg number (name res (+ (range #\0 #\9)))
   (string->number res))
