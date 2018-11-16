@@ -1,8 +1,5 @@
-#lang racket
-
-(require rackunit)
-(require peg)
-(require peg/s-exp)
+(use-modules (racket-peg peg) (racket-peg peg-result) (racket-peg s-exp))
+(use-modules (racket-peg rackunit))
 
 (check-equal? (peg s-exp
 "((null #\\null)

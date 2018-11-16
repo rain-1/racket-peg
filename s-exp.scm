@@ -1,12 +1,14 @@
-(module anything racket
-  (provide (all-defined-out))
-  (require peg/peg)
-  (begin
-    (require "peg-result.rkt")
-    (define char-table '(("null" . #\nul) ("nul" . #\nul) ("backspace" . #\backspace) ("tab" . #\tab) ("newline" . #\newline) ("vtab" . #\vtab) ("page" . #\page) ("return" . #\return) ("space" . #\space) ("rubout" . #\rubout)))
-    (define (symbol->keyword sym) (string->keyword (symbol->string sym)))
+(define-module (racket-peg s-exp)
+  #:use-module (racket-peg push-pop-boxes)
+  #:use-module (racket-peg peg-result)
+  #:use-module (racket-peg peg))
+
+    (define char-table '(("null" . #\nul) ("nul" . #\nul) ("backspace" . #\backspace) ("tab" . #\tab) ("newline" . #\newline) ("vtab" . #\vtab) ("page" . #\page) ("return" . #\return) ("space" . #\space)))
+    (define (symbol->keyword sym) (string->symbol (symbol->string sym)))
     (define-peg/drop _ (* (or #\space #\tab #\newline)))
+(export peg-rule:_)
     (define-peg s-exp (or list box-list quote quasiquote unquote syntax-quote syntax-quasiquote syntax-unquote boolean number identifier dotdotdot keyword character string))
+(export peg-rule:s-exp)
     (define-peg list (and "(" _ (name lst (* (and s-exp _))) (? (and (name dotted-pair ".") _ (name back s-exp))) ")") (if dotted-pair (append lst back) lst))
     (define-peg box-list (and "[" _ (name lst (* (and s-exp _))) (? (and (name dotted-pair ".") _ (name back s-exp))) "]") (if dotted-pair (append lst back) lst))
     (define-peg quote (and "'" _ (name s s-exp)) (list 'quote s))
@@ -34,4 +36,6 @@
     (define-peg integer-part (+ (range #\0 #\9)))
     (define-peg fractional-part (+ (range #\0 #\9)))
     (define-peg scientific-notation (and (or "e" "E") integer-part))
-    (define-peg floating-point (name value (and (? signal) integer-part (? (and "." fractional-part)) (? scientific-notation))) (string->number value))))
+    (define-peg floating-point (name value (and (? signal) integer-part (? (and "." fractional-part)) (? scientific-notation))) (string->number value))
+
+

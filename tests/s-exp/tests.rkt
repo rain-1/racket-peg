@@ -1,8 +1,12 @@
-#lang racket
+(use-modules (racket-peg peg) (racket-peg peg-result))
+(use-modules (racket-peg s-exp))
+(use-modules (racket-peg rackunit))
 
-(require rackunit)
-(require peg)
-(require peg/s-exp)
+;#lang racket
+
+;(require rackunit)
+;(require peg)
+;(require peg/s-exp)
 
 (define (s-exp->scheme x) x)
 
@@ -75,17 +79,17 @@
 		   [(list a b) a]
 		   [(list a) (list a 1)])))
 
-(check-equal?
- (s-exp->scheme (peg s-exp
- "(struct add (a b) #:transparent)"))
- '(struct add (a b) #:transparent))
+;(check-equal?
+; (s-exp->scheme (peg s-exp
+; "(struct add (a b) #:transparent)"))
+; '(struct add (a b) #:transparent))
 
-(check-equal?
- (s-exp->scheme (peg s-exp
- "(define (my-sort lst #:comparator [cmp <])
-             (sort lst cmp))"))
- '(define (my-sort lst #:comparator [cmp <])
-    (sort lst cmp)))
+;(check-equal?
+; (s-exp->scheme (peg s-exp
+; "(define (my-sort lst #:comparator [cmp <])
+;             (sort lst cmp))"))
+; '(define (my-sort lst #:comparator [cmp <])
+;    (sort lst cmp)))
 
 ;; newline and tab escapes
 (check-equal?
