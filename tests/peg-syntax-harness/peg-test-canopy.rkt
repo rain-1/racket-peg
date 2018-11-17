@@ -1,9 +1,20 @@
-#lang racket
+(use-modules (racket-peg peg))
+(use-modules (racket-peg guile-heredoc))
+(use-modules (racket-peg rackunit))
 
-(require rackunit)
-(require peg)
+#<<PEG
 
-(require "../peg-syntax/peg-example-canopy.rkt")
+url       <--  scheme '://' host pathname search hash? ;
+scheme    <--  'http' 's'? ;
+host      <--  hostname port? ;
+hostname  <--  segment ('.' segment)* ;
+segment   <--  [a-z0-9\-]+ ;
+port      <--  ':' [0-9]+ ;
+pathname  <--  '/' [^ ?]* ;
+search    <--  ('?' [^ #]*)? ;
+hash      <--  '#' [^ ]* ;
+
+PEG
 
 ;; example taken from
 ;; http://canopy.jcoglan.com/langs/javascript.html

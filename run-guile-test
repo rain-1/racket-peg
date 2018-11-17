@@ -1,4 +1,13 @@
 #!/bin/sh
 echo "running test '$1'"
-guile -l push-pop-boxes.scm -l peg-result.scm -l peg.scm -l rackunit.scm -l guile-heredoc.scm -l s-exp.scm "$1" && echo ok
+rlwrap guile \
+	-l push-pop-boxes.scm \
+	-l peg-result.scm \
+	-l peg.scm \
+	-l rackunit.scm \
+	-l s-exp.scm \
+	-l peg-in-peg.scm \
+	-l peg-to-scheme.scm \
+	-l guile-heredoc.scm \
+	"$1" && echo ok
 

@@ -1,13 +1,9 @@
-#lang racket
-
-(require rackunit)
-(require racket/trace)
-
-(require "peg.rkt")
-(require "peg-result.rkt")
-(require "peg-in-peg.rkt")
-
-(provide peg->scheme)
+(define-module (racket-peg peg-to-scheme)
+  #:use-module (racket-peg peg-result)
+  #:use-module (racket-peg peg)
+  #:use-module (racket-peg peg-in-peg)
+  #:use-module (ice-9 match)
+  #:export (peg->scheme))
 
 (define (make-and lst)
   (cond ((null? lst) (error 'make-and "null"))
@@ -32,10 +28,10 @@
 
 (define (peg->scheme:grammar p)
   (define (op? op)
-    (case op
-      (("<") 'define-peg/drop)
-      (("<-") 'define-peg)
-      (("<--") 'define-peg/tag)
+    (case (string->symbol op)
+      ((<) 'define-peg/drop)
+      ((<-) 'define-peg)
+      ((<--) 'define-peg/tag)
       (else (error 'peg->scheme:grammar "~s" op))))
   (match p
     (`(import ,s-exp ";")
@@ -61,16 +57,16 @@
 
 (define (peg->scheme:expression p)
   (define (prefix-op? extra)
-    (case extra
-      (("!") '!)
-      (("&") '&)
-      (("~") 'drop)
+    (case (string->symbol extra)
+      ((!) '!)
+      ((&) '&)
+      ((~) 'drop)
       (else (error 'peg->scheme:expression "invalid prefix op" extra))))
   (define (op? extra)
-    (case extra
-      (("*") '*)
-      (("+") '+)
-      (("?") '?)
+    (case (string->symbol extra)
+      ((*) '*)
+      ((+) '+)
+      ((?) '?)
       (else (error 'peg->scheme:expression "invalid op" extra))))
   (define (go negate? prim extra?)
     ((lambda (x) (if negate? `(,negate? ,x) x))
@@ -81,11 +77,13 @@
       `(name ,(string->symbol n) ,(peg->scheme:expression `(expression . ,rest))))
     (`(expression ,prim)
      (go #f (peg->scheme:primary prim) #f))
-    (`(expression ,p-op ,prim) #:when (string? p-op)
+    ((and `(expression ,p-op ,prim)
+	  (? string? p-op))
      (go (prefix-op? p-op) (peg->scheme:primary prim) #f))
     (`(expression ,prim ,extra)
      (go #f (peg->scheme:primary prim) (op? extra)))
-    (`(expression ,p-op ,prim ,extra) #:when (string? p-op)
+    ((and `(expression ,p-op ,prim ,extra)
+	  (? string? p-op))
      (go (prefix-op? p-op) (peg->scheme:primary prim) (op? extra)))
     (else (error 'peg->scheme:expression "~s" p))))
 
@@ -130,9 +128,3 @@
      `(range ,(string-ref c1c2 0) ,(string-ref c1c2 1)))
     (else (error 'peg->scheme:cc "~s" p))))
 
-;(trace peg->scheme)
-;(trace peg->scheme:grammar)
-;(trace peg->scheme:pattern)
-;(trace peg->scheme:alternative)
-;(trace peg->scheme:expression)
-;(trace peg->scheme:primary)

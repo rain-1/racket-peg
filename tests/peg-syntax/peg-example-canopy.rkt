@@ -1,4 +1,4 @@
-#lang peg
+#<<PEG
 
 url       <--  scheme '://' host pathname search hash? ;
 scheme    <--  'http' 's'? ;
@@ -9,3 +9,5 @@ port      <--  ':' [0-9]+ ;
 pathname  <--  '/' [^ ?]* ;
 search    <--  ('?' [^ #]*)? ;
 hash      <--  '#' [^ ]* ;
+
+PEG
