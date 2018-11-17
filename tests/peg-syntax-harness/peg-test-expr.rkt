@@ -1,9 +1,16 @@
-#lang racket
+(use-modules (racket-peg peg))
+(use-modules (racket-peg guile-heredoc))
+(use-modules (racket-peg rackunit))
 
-(require rackunit)
-(require peg)
+#<<PEG
 
-(require "../peg-syntax/peg-example-expr.rkt")
+expr <- sum ;
+sum <-- (product ('+' / '-') sum) / product ;
+product <-- (value ('*' / '/') product) / value ;
+value <-- number / '(' expr ')' ;
+number <-- [0-9]+ ;
+
+PEG
 
 (check-equal? (peg expr "4324+431")
               '(sum (product value number . "4324") "+" (sum product value number . "431")))

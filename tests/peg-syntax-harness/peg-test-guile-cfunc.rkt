@@ -1,9 +1,26 @@
-#lang racket
+(use-modules (racket-peg peg))
+(use-modules (racket-peg guile-heredoc))
+(use-modules (racket-peg rackunit))
 
-(require rackunit)
-(require peg)
+#<<PEG
 
-(require "../peg-syntax/peg-example-guile-cfunc.rkt")
+cfunc <-- cSP ctype cSP cname cSP cargs cLB cSP cbody cRB ;
+ctype <-- cidentifier ;
+cname <-- cidentifier ;
+cargs <-- cLP (! (cSP cRP) carg cSP (cCOMMA / cRP) cSP)* cSP ;
+carg <-- cSP ctype cSP cname ;
+cbody <-- cstatement * ;
+cidentifier <- [a-zA-z][a-zA-Z0-9_]* ;
+cstatement <-- (!';'.)*cSC cSP ;
+cSC < ';' ;
+cCOMMA < ',' ;
+cLP < '(' ;
+cRP < ')' ;
+cLB < '{' ;
+cRB < '}' ;
+cSP < [ \t\n]* ;
+
+PEG
 
 (check-equal? (peg cfunc "int square(int a) { return a*a;}")
               '(cfunc (ctype . "int") (cname . "square") (cargs (carg (ctype . "int") (cname . "a")))

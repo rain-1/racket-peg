@@ -1,10 +1,12 @@
+(use-modules (racket-peg peg))
+(use-modules (racket-peg guile-heredoc))
+(use-modules (racket-peg rackunit))
 
-#lang racket
+#<<PEG
 
-(require rackunit)
-(require peg)
+a <- 'a' -> #f ;
 
-(require "../peg-syntax/peg-example-false-action.rkt")
+PEG
 
 (check-equal? (peg a "a") #f)
 

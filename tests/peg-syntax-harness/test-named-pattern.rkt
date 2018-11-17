@@ -1,9 +1,13 @@
-#lang racket
+(use-modules (racket-peg peg))
+(use-modules (racket-peg guile-heredoc))
+(use-modules (racket-peg rackunit))
 
-(require peg)
-(require rackunit)
+#<<PEG
 
-(require "../peg-syntax/peg-example-named-pattern.rkt")
+number <- value:[0-9]+ -> (string->number value);
+sum <- v1:number ~'+' v2:number -> `(+ ,v1 ,v2);
+
+PEG
 
 (check-equal?
   (peg sum  "123+12")

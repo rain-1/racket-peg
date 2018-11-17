@@ -1,18 +1,35 @@
-#lang racket
+(use-modules (racket-peg peg))
+(use-modules (racket-peg guile-heredoc))
+(use-modules (racket-peg rackunit))
 
-(require rackunit)
-(require peg)
+#<<PEG
 
-(require "../peg-syntax/peg-example-guile-passwd.rkt")
+passwd <-- entry* !. ;
+entry <-- login C pass C uid C gid C nameORcomment C homedir C shell NL* ;
+login <-- text ;
+pass <-- text ;
+uid <-- [0-9]* ;
+gid <-- [0-9]* ;
+nameORcomment <-- text ;
+homedir <-- path ;
+shell <-- path ;
+path <-- (SLASH pathELEMENT)* ;
+pathELEMENT <-- (!NL !C  !'/' .)* ;
+text <- (!NL !C  .)* ;
+C < ':' ;
+NL < [\n] ;
+SLASH < '/' ;
 
-(define *etc-passwd*
-  "root:x:0:0:root:/root:/bin/bash
+PEG
+
+(define *etc-passwd* #<<EOF
+root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/bin/sh
 bin:x:2:2:bin:/bin:/bin/sh
 sys:x:3:3:sys:/dev:/bin/sh
 nobody:x:65534:65534:nobody:/nonexistent:/bin/sh
 messagebus:x:103:107::/var/run/dbus:/bin/false
-")
+EOF)
 
 (check-equal? (peg passwd *etc-passwd*)
               '(passwd

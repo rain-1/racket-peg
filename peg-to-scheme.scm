@@ -57,10 +57,10 @@
 
 (define (peg->scheme:expression p)
   (define (prefix-op? extra)
-    (case (string->symbol extra)
-      ((!) '!)
-      ((&) '&)
-      ((~) 'drop)
+    (match extra
+      ("!" '!)
+      ("&" '&)
+      ("~" 'drop)
       (else (error 'peg->scheme:expression "invalid prefix op" extra))))
   (define (op? extra)
     (case (string->symbol extra)
