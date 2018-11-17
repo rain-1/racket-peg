@@ -5,6 +5,16 @@
   #:use-module (ice-9 match)
   #:export (peg->scheme))
 
+(define-syntax define/debug
+  (syntax-rules ()
+    ((define/debug (<name> <args> ...) <body> ...)
+     (define (<name> <args> ...)
+;       (display `(<name> ,<args> ...)) (newline)
+       (let ()
+	 <body> ...))
+     )))
+     
+
 (define (make-and lst)
   (cond ((null? lst) (error 'make-and "null"))
         ((null? (cdr lst)) (car lst))
@@ -20,18 +30,18 @@
     (error 'string->char "~a" str))
   (string-ref str 0))
 
-(define (peg->scheme p)
+(define/debug (peg->scheme p)
   (match p
     (`(peg . ,grammars)
      `(begin . ,(map peg->scheme:grammar grammars)))
     (else (error 'peg->scheme "~s" p))))
 
-(define (peg->scheme:grammar p)
+(define/debug (peg->scheme:grammar p)
   (define (op? op)
-    (case (string->symbol op)
-      ((<) 'define-peg/drop)
-      ((<-) 'define-peg)
-      ((<--) 'define-peg/tag)
+    (match op
+      ("<" 'define-peg/drop)
+      ("<-" 'define-peg)
+      ("<--" 'define-peg/tag)
       (else (error 'peg->scheme:grammar "~s" op))))
   (match p
     (`(import ,s-exp ";")
@@ -43,30 +53,30 @@
      `(define-peg ,(string->symbol nt) ,(peg->scheme:pattern pat) ,sem))
     (else (error 'peg->scheme:grammar "~s" p))))
 
-(define (peg->scheme:pattern p)
+(define/debug (peg->scheme:pattern p)
   (match p
     (`(pattern . ,alternatives)
      (make-or (map peg->scheme:alternative alternatives)))
     (else (error 'peg->scheme:pattern "~s" p))))
 
-(define (peg->scheme:alternative p)
+(define/debug (peg->scheme:alternative p)
   (match p
     (`(alternative . ,exps)
      (make-and (map peg->scheme:expression exps)))
     (else (error 'peg->scheme:alternative "~s" p))))
 
-(define (peg->scheme:expression p)
-  (define (prefix-op? extra)
+(define/debug (peg->scheme:expression p)
+  (define/debug (prefix-op? extra)
     (match extra
       ("!" '!)
       ("&" '&)
       ("~" 'drop)
       (else (error 'peg->scheme:expression "invalid prefix op" extra))))
-  (define (op? extra)
-    (case (string->symbol extra)
-      ((*) '*)
-      ((+) '+)
-      ((?) '?)
+  (define/debug (op? extra)
+    (match extra
+      ("*" '*)
+      ("+" '+)
+      ("?" '?)
       (else (error 'peg->scheme:expression "invalid op" extra))))
   (define (go negate? prim extra?)
     ((lambda (x) (if negate? `(,negate? ,x) x))
@@ -77,17 +87,15 @@
       `(name ,(string->symbol n) ,(peg->scheme:expression `(expression . ,rest))))
     (`(expression ,prim)
      (go #f (peg->scheme:primary prim) #f))
-    ((and `(expression ,p-op ,prim)
-	  (? string? p-op))
+    (`(expression ,(and (? string?) p-op) ,prim)
      (go (prefix-op? p-op) (peg->scheme:primary prim) #f))
     (`(expression ,prim ,extra)
      (go #f (peg->scheme:primary prim) (op? extra)))
-    ((and `(expression ,p-op ,prim ,extra)
-	  (? string? p-op))
+    (`(expression ,(and (? string?) p-op) ,prim ,extra)
      (go (prefix-op? p-op) (peg->scheme:primary prim) (op? extra)))
     (else (error 'peg->scheme:expression "~s" p))))
 
-(define (peg->scheme:primary p)
+(define/debug (peg->scheme:primary p)
   (match p
     (`(primary "(" ,pat ")")
      (peg->scheme:pattern pat))
@@ -105,7 +113,7 @@
      (string->symbol nt))
     (else (error 'peg->scheme:primary "~s" p))))
 
-(define (peg->scheme:cc p)
+(define/debug (peg->scheme:cc p)
   (define (unescape? ch)
     (case ch
       ((#\[) #\[)

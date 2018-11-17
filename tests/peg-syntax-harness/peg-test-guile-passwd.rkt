@@ -29,7 +29,8 @@ bin:x:2:2:bin:/bin:/bin/sh
 sys:x:3:3:sys:/dev:/bin/sh
 nobody:x:65534:65534:nobody:/nonexistent:/bin/sh
 messagebus:x:103:107::/var/run/dbus:/bin/false
-EOF)
+EOF
+)
 
 (check-equal? (peg passwd *etc-passwd*)
               '(passwd

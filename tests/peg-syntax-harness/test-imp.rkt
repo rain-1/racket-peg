@@ -4,7 +4,13 @@
 
 #<<PEG
 
-(require "peg-example-expr.scm") ;
+
+expr <- sum ;
+sum <-- (product ('+' / '-') sum) / product ;
+product <-- (value ('*' / '/') product) / value ;
+value <-- number / '(' expr ')' ;
+number <-- [0-9]+ ;
+
 
 //based on grammar
 //https://github.com/ChristianoBraga/BPLC/blob/python-ibm-cloud/examples/imp/doc/imp.pdf
