@@ -1,9 +1,22 @@
-#lang racket
+(use-modules (racket-peg peg))
+(use-modules (racket-peg guile-heredoc))
+(use-modules (racket-peg rackunit))
 
-(require peg)
-(require rackunit)
+#<<PEG
 
-(require "../peg-syntax/peg-example-newick.rkt")
+top <- v:Tree ! . -> v;
+Tree <-- (Branch / SubTree) ~';' ; //will work with ";" as input (peg top ";") will work because that
+SubTree <--  Internal / Leaf ; //always work
+Leaf <-- Name ; //always work
+Name <-- String / '' ; //always work
+String <-- [a-zA-Z]+ ;
+Internal <-- ~'(' BranchSet ~')' Name ;
+BranchSet <-- Branch (~',' Branch)* ;
+Branch <-- SubTree Length ;
+Length <-- ~':' Number ;
+Number <- [0-9]+('.' Number)? ;
+
+PEG
 
 (check-equal?
   (peg top "((B:0.2,(C:0.3,D:0.4)E:0.5)A:0.1)F;")

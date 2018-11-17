@@ -1,9 +1,29 @@
-#lang racket
+(use-modules (racket-peg peg))
+(use-modules (racket-peg guile-heredoc))
+(use-modules (racket-peg rackunit))
 
-(require rackunit)
-(require peg)
+#<<PEG
 
-(require "../peg-syntax/peg-example-peg-as-peg.rkt")
+peg-in-peg <-- sp grammar+ ;
+grammar <-- (nonterminal ('<--' / '<-' / '<') sp pattern)+ ';' sp ;
+pattern <-- alternative (SLASH sp alternative)* ;
+alternative <-- ([!&]? sp suffix)+ ;
+suffix <-- primary ([*+?] sp)? ;
+primary <-- '(' sp pattern ')' sp / '.' sp / literal / charclass / nonterminal !'<' ;
+literal <-- ['] (!['] .)* ['] sp ;
+charclass <-- LB (!']' (CCrange / CCsingle))* RB sp ;
+CCrange <-- . '-' . ;
+CCsingle <-- !']' . ;
+ntchar <- [a-zA-Z0-9\-] ;
+nonterminal <-- ntchar+ !ntchar sp ;
+sp < [ \t\n]* ;
+SLASH < '/' ;
+LB < '[' ;
+RB < ']' ;
+
+
+PEG
+
 
 (define *expr-peg* #<<EOF
 expr <- sum ;expra <- suma ;

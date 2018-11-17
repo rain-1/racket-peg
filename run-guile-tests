@@ -1,2 +1,3 @@
 #!/bin/sh
-for file in tests/*rkt ; do ./run-guile-test "$file" ; echo ; echo ; echo ; done
+for file in tests/*rkt tests/peg-syntax-harness/*rkt ; do ./run-guile-test "$file" ; echo ; echo ; echo ; done
+
