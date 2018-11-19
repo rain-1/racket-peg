@@ -2,7 +2,7 @@
 
 set -x
 
-if [[ $# -eq 0 ]]
+if [ $# -eq 0 ];
 then
 	echo targets are
 	echo \* install
