@@ -189,7 +189,10 @@
        (peg-compile #'(? (and e1 e2 ...)) #'sk)]
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)])
-		    #'(rule sk))]
+		    #'(if (pegvm-verbose)
+			  (parameterize ((pegvm-verbose (+ (pegvm-verbose) 1)))
+			    (rule sk))
+			  (rule sk)))]
       [(name nm e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (r)
@@ -243,6 +246,7 @@
                    [action (if (syntax-e #'has-action?) #'action #'res)])
        #'(define (name sk)
 	   (when (pegvm-verbose)
+	     (display (make-string (pegvm-verbose) #\space))
 	     (display 'name)
 	     (newline))
            (parameterize ([pegvm-current-rule 'name])
@@ -308,7 +312,7 @@
                         [pegvm-stashed-stacks (box '())]
                         [pegvm-negation? (box 0)]
                         [pegvm-best-failure (box #f)]
-			[pegvm-verbose v])
+			[pegvm-verbose (if v 0 #f)])
 	   (peg-rule:local success-cont)))]))
 
 
