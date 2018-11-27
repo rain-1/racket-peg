@@ -190,7 +190,7 @@
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)]
 		     [rule-debug (format-id #'rule-name "peg-rule:~a-debug" #'rule-name)])
-         #'(if pegvm-verbose (rule-debug sk) (rule sk)))]
+         #'(if (pegvm-verbose) (rule-debug sk) (rule sk)))]
       [(name nm e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (r)
@@ -238,8 +238,8 @@
     [(_ rule-name exp action)
      #'(define-peg rule-name exp action #t)]
     [(_ rule-name exp action has-action?)
-     (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)]
-		   [name-debug (format-id #'rule-name "peg-rule:~a-debug" #'rule-name)]
+     (with-syntax ([name (format-id #'rule-name "peg-rule:~a" (syntax-e #'rule-name))]
+		   [name-debug (format-id #'rule-name "peg-rule:~a-debug" (syntax-e #'rule-name))]
                    [bindings (map make-binding (peg-names #'exp))]
                    [body (peg-compile #'exp #'sk^)]
                    [action (if (syntax-e #'has-action?) #'action #'res)])
@@ -249,11 +249,12 @@
 	             (let* bindings
 	               (let ((sk^ (lambda (res) (sk action))))
 	                 body))))
-		(trace-define (name-debug sk)
+		(define (name-debug sk)
 		(parameterize ([pegvm-current-rule 'name-debug])
 	             (let* bindings
 	               (let ((sk^ (lambda (res) (sk action))))
-	                 body))))))]))
+	                 body))))
+		(trace name-debug)))]))
 
 (define-syntax (define-peg/drop stx)
   (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (drop exp))]))
@@ -314,6 +315,6 @@
                         [pegvm-negation? (box 0)]
                         [pegvm-best-failure (box #f)]
 			[pegvm-verbose v])
-	   (if pegvm-verbose
+	   (if (pegvm-verbose)
 		(peg-rule:local-debug success-cont)
 	           (peg-rule:local success-cont))))]))
