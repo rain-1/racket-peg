@@ -5,7 +5,7 @@
          peg)
 
 (require (for-syntax racket/syntax))
-
+(require racket/trace)
 (require "push-pop-boxes.rkt")
 (require "peg-result.rkt")
 
@@ -45,6 +45,8 @@
 ;;;;
 ;; pegvm registers and dynamic control
 
+
+(define pegvm-verbose (make-parameter #f))
 (define pegvm-input-text (make-parameter #f))      ;; The input string being parsed
 (define pegvm-input-position (make-parameter #f))  ;; The position inside the string
 (define pegvm-control-stack (make-parameter #f))   ;; For or control flow
@@ -187,7 +189,10 @@
        (peg-compile #'(? (and e1 e2 ...)) #'sk)]
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)])
-         #'(rule sk))]
+		    #'(if (pegvm-verbose)
+			  (parameterize ((pegvm-verbose (+ (pegvm-verbose) 1)))
+			    (rule sk))
+			  (rule sk)))]
       [(name nm e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (r)
@@ -235,15 +240,19 @@
     [(_ rule-name exp action)
      #'(define-peg rule-name exp action #t)]
     [(_ rule-name exp action has-action?)
-     (with-syntax ([name (format-id #'rule-name "peg-rule:~a" #'rule-name)]
+     (with-syntax ([name (format-id #'rule-name "peg-rule:~a" (syntax-e #'rule-name))]
                    [bindings (map make-binding (peg-names #'exp))]
                    [body (peg-compile #'exp #'sk^)]
                    [action (if (syntax-e #'has-action?) #'action #'res)])
        #'(define (name sk)
+	   (when (pegvm-verbose)
+	     (display (make-string (pegvm-verbose) #\space))
+	     (display 'name)
+	     (newline))
            (parameterize ([pegvm-current-rule 'name])
-             (let* bindings
-               (let ((sk^ (lambda (res) (sk action))))
-                 body)))))]))
+	     (let* bindings
+	       (let ((sk^ (lambda (res) (sk action))))
+	         body)))))]))
 
 (define-syntax (define-peg/drop stx)
   (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (drop exp))]))
@@ -281,7 +290,8 @@
 
 (define-syntax (peg stx)
   (syntax-case stx ()
-    [(_ exp str)
+    [(_ exp str) #'(peg exp str #f)]
+    [(_ exp str v)
      #'(let ((fail-cont (lambda ()
                           (let ((loc (car (unbox (pegvm-best-failure)))))
                             (display (string-replace (string-replace (copy-and-pad-substring (pegvm-input-text) (- loc 10) (+ loc 10))
@@ -301,5 +311,8 @@
                         [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
                         [pegvm-stashed-stacks (box '())]
                         [pegvm-negation? (box 0)]
-                        [pegvm-best-failure (box #f)])
-           (peg-rule:local success-cont)))]))
+                        [pegvm-best-failure (box #f)]
+			[pegvm-verbose (if v 0 #f)])
+	   (peg-rule:local success-cont)))]))
+
+
