@@ -144,10 +144,14 @@
          #'(let ((stack-reset (unbox (pegvm-control-stack))))
              (let ((mk (lambda (r1)
                          (let ((sk^ (lambda (r2)
-                                      (sk (peg-result-join r1 r2)))))
+					(if (pegvm-verbose)
+						(parameterize ((pegvm-verbose (sub1 (pegvm-verbose))))
+		                                      (sk (peg-result-join r1 r2)))
+						(sk (peg-result-join r1 r2))))))
                            (set-box! (pegvm-control-stack) stack-reset)
                            p2))))
-               p1)))]
+              p1
+		)))]
       [(and e1 e2 e3 ...)
        (peg-compile #'(and e1 (and e2 e3 ...)) #'sk)]
 ;      [(and e1 e2 e3 ...)
@@ -251,8 +255,18 @@
 	     (newline))
            (parameterize ([pegvm-current-rule 'name])
 	     (let* bindings
-	       (let ((sk^ (lambda (res) (sk action))))
-	         body)))))]))
+	       (let ((sk^ (lambda (res)
+				(if (pegvm-verbose)
+					(parameterize ((pegvm-verbose (sub1 (pegvm-verbose))))
+						(sk action))
+					(sk action)))))
+		
+		(if (pegvm-verbose)
+			(parameterize ((pegvm-verbose (add1 (pegvm-verbose))))
+		         body)
+			body)
+		
+		)))))]))
 
 (define-syntax (define-peg/drop stx)
   (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (drop exp))]))
