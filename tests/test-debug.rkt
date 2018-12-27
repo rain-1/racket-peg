@@ -14,3 +14,9 @@
 (peg exp "12+13" #t)
 
 (peg sum "12+13" #t)
+
+(check-equal?
+
+"peg-rule:local
+  peg-rule:number"
+	(with-output-to-string (peg number "12" #t)))
