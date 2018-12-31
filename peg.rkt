@@ -191,7 +191,7 @@
        (peg-compile #'(? (and e1 e2 ...)) #'sk)]
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)])
-			  (rule sk))]
+			  #'(rule sk))]
       [(name nm e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (r)
