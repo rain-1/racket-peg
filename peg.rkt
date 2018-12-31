@@ -64,21 +64,12 @@
 (define (pegvm-advance! n) (set-box! (pegvm-input-position) (+ (unbox (pegvm-input-position)) n)))
 (define (pegvm-push-alternative! alt) (push! (pegvm-control-stack) (control-frame (unbox (pegvm-input-position)) alt)))
 (define (pegvm-fail)
-  (if (pegvm-verbose)
 	(begin
-	(display (format "FAIL!!!!!!! On Rule ~a\n" (pegvm-current-rule)))
-	(parameterize ((pegvm-verbose (sub1 (pegvm-verbose))))
 	  (pegvm-update-best-error!)
 	  (let ((cf (pop! (pegvm-control-stack))))
 	    (when (control-frame-position cf)
 	      (set-box! (pegvm-input-position) (control-frame-position cf)))
 	    ((control-frame-label cf)))))
-	(begin
-	  (pegvm-update-best-error!)
-	  (let ((cf (pop! (pegvm-control-stack))))
-	    (when (control-frame-position cf)
-	      (set-box! (pegvm-input-position) (control-frame-position cf)))
-	    ((control-frame-label cf))))))
 (define (pegvm-enter-negation!)
   (set-box! (pegvm-negation?) (+ (unbox (pegvm-negation?)) 1))
   (push! (pegvm-stashed-stacks) (unbox (pegvm-control-stack)))
@@ -154,10 +145,7 @@
          #'(let ((stack-reset (unbox (pegvm-control-stack))))
              (let ((mk (lambda (r1)
                          (let ((sk^ (lambda (r2)
-					(if (pegvm-verbose)
-						(parameterize ((pegvm-verbose (sub1 (pegvm-verbose))))
-		                                      (sk (peg-result-join r1 r2)))
-						(sk (peg-result-join r1 r2))))))
+						(sk (peg-result-join r1 r2)))))
                            (set-box! (pegvm-control-stack) stack-reset)
                            p2))))
               p1
@@ -203,10 +191,7 @@
        (peg-compile #'(? (and e1 e2 ...)) #'sk)]
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)])
-		    #'(if (pegvm-verbose)
-			  (parameterize ((pegvm-verbose (+ (pegvm-verbose) 1)))
-			    (rule sk))
-			  (rule sk)))]
+			  (rule sk))]
       [(name nm e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (r)
@@ -266,15 +251,9 @@
            (parameterize ([pegvm-current-rule 'name])
 	     (let* bindings
 	       (let ((sk^ (lambda (res)
-				(if (pegvm-verbose)
-					(parameterize ((pegvm-verbose (sub1 (pegvm-verbose))))
-						(sk action))
-					(sk action)))))
+					(sk action))))
 		
-		(if (pegvm-verbose)
-			(parameterize ((pegvm-verbose (add1 (pegvm-verbose))))
-		         body)
-			body)
+			body
 		
 		)))))]))
 
