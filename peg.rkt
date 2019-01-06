@@ -140,8 +140,8 @@
       [(and e1)
        (peg-compile #'e1 #'sk #'fk)]
       [(and e1 e2)
-       (with-syntax ([p1 (peg-compile #'e1 #'mk)]
-                     [p2 (peg-compile #'e2 #'sk^)])
+       (with-syntax ([p1 (peg-compile #'e1 #'mk #'fmk)]
+                     [p2 (peg-compile #'e2 #'sk^ #'fk^)])
          #'(let ((stack-reset (unbox (pegvm-control-stack))))
              (let ((mk (lambda (r1)
                          (let ((sk^ (lambda (r2)
@@ -151,22 +151,22 @@
               p1
 		)))]
       [(and e1 e2 e3 ...)
-       (peg-compile #'(and e1 (and e2 e3 ...)) #'sk)]
+       (peg-compile #'(and e1 (and e2 e3 ...)) #'sk #'fk)]
 ;      [(and e1 e2 e3 ...)
 ;       (peg-compile #'(and (and e1 e2) e3 ...) #'sk)]
       [($or e1 e2)
-       (with-syntax ([p1 (peg-compile #'e1 #'sk)]
-                     [p2 (peg-compile #'e2 #'sk)])
+       (with-syntax ([p1 (peg-compile #'e1 #'sk #'fk1)]
+                     [p2 (peg-compile #'e2 #'sk #'fk2)])
          #'(begin (pegvm-push-alternative! (lambda () p2))
                   p1))]
       [(or e1)
-       (peg-compile #'e1 #'sk)]
+       (peg-compile #'e1 #'sk #'fk)]
       [(or e1 e2)
-       (with-syntax ([p (peg-compile #'($or e1 e2) #'sk)])
+       (with-syntax ([p (peg-compile #'($or e1 e2) #'sk #'fk)])
          #'(parameterize ([pegvm-current-choice '(or e1 e2)])
              p))]
       [(or e1 e2 e3 ...)
-       (with-syntax ([p (peg-compile #'($or e1 (or e2 e3 ...)) #'sk)])
+       (with-syntax ([p (peg-compile #'($or e1 (or e2 e3 ...)) #'sk #'fk)])
          #'(parameterize ([pegvm-current-choice '(or e1 e2 e3 ...)])
              p))]
       [(* e)
