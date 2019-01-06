@@ -111,8 +111,8 @@
     [else '()]))
 
 (define-for-syntax (peg-compile exp sk)
-  (define (single-char-pred sk x cond)
-    (with-syntax ([sk sk] [x x] [cond cond])
+  (define (single-char-pred sk fk x cond)
+    (with-syntax ([sk sk] [fk fk] [x x] [cond cond])
       #'(if (pegvm-eof?)
             (pegvm-fail)
             (let ((x (pegvm-peek)))
@@ -241,9 +241,9 @@
     [(_ rule-name exp action has-action?)
      (with-syntax ([name (format-id #'rule-name "peg-rule:~a" (syntax-e #'rule-name))]
                    [bindings (map make-binding (peg-names #'exp))]
-                   [body (peg-compile #'exp #'sk^)]
+                   [body (peg-compile #'exp #'sk^ #'fk)]
                    [action (if (syntax-e #'has-action?) #'action #'res)])
-       #'(define (name sk)
+       #'(define (name sk fk)
 	   (when (pegvm-verbose)
 	     (display (make-string (pegvm-verbose) #\space))
 	     (display 'name)
@@ -251,11 +251,15 @@
            (parameterize ([pegvm-current-rule 'name])
 	     (let* bindings
 	       (let ((sk^ (lambda (res)
-					(sk action))))
+					(sk action)))
+		     (fk^ (lambda ()
+				(if (pegvm-verbose)
+					(begin
+						(display (string-append "Fail on " 'name))
+						(fk))
+					(fk)))))
 		
-			body
-		
-		)))))]))
+			body)))))]))
 
 (define-syntax (define-peg/drop stx)
   (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (drop exp))]))
@@ -316,6 +320,6 @@
                         [pegvm-negation? (box 0)]
                         [pegvm-best-failure (box #f)]
 			[pegvm-verbose (if v 0 #f)])
-	   (peg-rule:local success-cont)))]))
+	   (peg-rule:local success-cont fail-cont)))]))
 
 
