@@ -147,7 +147,9 @@
                          (let ((sk^ (lambda (r2)
 						(sk (peg-result-join r1 r2)))))
                            (set-box! (pegvm-control-stack) stack-reset)
-                           p2))))
+                           p2)))
+			(fmk pegvm-fail)
+			(fk^ pegvm-fail))
               p1
 		)))]
       [(and e1 e2 e3 ...)
