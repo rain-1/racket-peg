@@ -110,35 +110,35 @@
     [(drop e1 ...) (peg-names #'(and e1 ...))]
     [else '()]))
 
-(define-for-syntax (peg-compile exp sk)
+(define-for-syntax (peg-compile exp sk fk)
   (define (single-char-pred sk fk x cond)
     (with-syntax ([sk sk] [fk fk] [x x] [cond cond])
       #'(if (pegvm-eof?)
-            (pegvm-fail)
+            (fk)
             (let ((x (pegvm-peek)))
               (if cond
                   (begin (pegvm-advance! 1)
                          (sk (peg-result (char->string x))))
                   (pegvm-fail))))))
-  (with-syntax ([sk sk])
+  (with-syntax ([sk sk] [fk fk])
     (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop
                               $or)
       [(epsilon)
        #'(sk empty-sequence)]
       [(char c)
-       (single-char-pred #'sk #'x #'(char=? c x))]
+       (single-char-pred #'sk #'fk #'x #'(char=? c x))]
       [(any-char)
-       (single-char-pred #'sk #'x #t)]
+       (single-char-pred #'sk #'fk #'x #t)]
       [(range c1 c2)
-       (single-char-pred #'sk #'x #'(char-between? x c1 c2))]
+       (single-char-pred #'sk #'fk #'x #'(char-between? x c1 c2))]
       [(string str)
        (with-syntax ([str-len (string-length (syntax->datum #'str))])
          #'(if (string-contains-substring? (pegvm-input-text) (unbox (pegvm-input-position)) str)
                (begin (pegvm-advance! str-len)
                       (sk (peg-result str)))
-               (pegvm-fail)))]
+               (fk)))]
       [(and e1)
-       (peg-compile #'e1 #'sk)]
+       (peg-compile #'e1 #'sk #'fk)]
       [(and e1 e2)
        (with-syntax ([p1 (peg-compile #'e1 #'mk)]
                      [p2 (peg-compile #'e2 #'sk^)])
@@ -241,7 +241,7 @@
     [(_ rule-name exp action has-action?)
      (with-syntax ([name (format-id #'rule-name "peg-rule:~a" (syntax-e #'rule-name))]
                    [bindings (map make-binding (peg-names #'exp))]
-                   [body (peg-compile #'exp #'sk^ #'fk)]
+                   [body (peg-compile #'exp #'sk^ #'fk^)]
                    [action (if (syntax-e #'has-action?) #'action #'res)])
        #'(define (name sk fk)
 	   (when (pegvm-verbose)
@@ -320,6 +320,6 @@
                         [pegvm-negation? (box 0)]
                         [pegvm-best-failure (box #f)]
 			[pegvm-verbose (if v 0 #f)])
-	   (peg-rule:local success-cont fail-cont)))]))
+	   (peg-rule:local success-cont pegvm-fail)))]))
 
 
