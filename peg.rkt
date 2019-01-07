@@ -148,17 +148,15 @@
 						(sk (peg-result-join r1 r2)))))
                            (set-box! (pegvm-control-stack) stack-reset)
                            p2)))
-			(fmk pegvm-fail)
-			(fk^ pegvm-fail))
+			(fmk fk)
+			(fk^ fk))
               p1
 		)))]
       [(and e1 e2 e3 ...)
        (peg-compile #'(and e1 (and e2 e3 ...)) #'sk #'fk)]
-;      [(and e1 e2 e3 ...)
-;       (peg-compile #'(and (and e1 e2) e3 ...) #'sk)]
       [($or e1 e2)
-       (with-syntax ([p1 (peg-compile #'e1 #'sk #'fk1)]
-                     [p2 (peg-compile #'e2 #'sk #'fk2)])
+       (with-syntax ([p1 (peg-compile #'e1 #'sk #'fk)]
+                     [p2 (peg-compile #'e2 #'sk #'fk)])
          #'(begin (pegvm-push-alternative! (lambda () p2))
                   p1))]
       [(or e1)
@@ -172,7 +170,7 @@
          #'(parameterize ([pegvm-current-choice '(or e1 e2 e3 ...)])
              p))]
       [(* e)
-       (with-syntax ([p (peg-compile #'e #'s+)])
+       (with-syntax ([p (peg-compile #'e #'s+ #'fk)])
          #'(letrec ((s* (lambda (res-acc)
                           (pegvm-push-alternative! (lambda () (sk res-acc)))
                           (let ((s+ (lambda (res)
@@ -180,34 +178,29 @@
                             p))))
              (s* empty-sequence)))]
       [(* e1 e2 ...)
-       (peg-compile #'(* (and e1 e2 ...)) #'sk)]
+       (peg-compile #'(* (and e1 e2 ...)) #'sk #'fk)]
       [(+ e)
-       (peg-compile #'(and e (* e)) #'sk)]
+       (peg-compile #'(and e (* e)) #'sk #'fk)]
       [(+ e1 e2 ...)
-       (peg-compile #'(+ (and e1 e2 ...)) #'sk)]
+       (peg-compile #'(+ (and e1 e2 ...)) #'sk #'fk)]
       [(? e)
-       (with-syntax ([p (peg-compile #'e #'sk)])
+       (with-syntax ([p (peg-compile #'e #'sk #'fk)])
          #'(begin (pegvm-push-alternative! (lambda () (sk empty-sequence)))
                   p))]
       [(? e1 e2 ...)
-       (peg-compile #'(? (and e1 e2 ...)) #'sk)]
+       (peg-compile #'(? (and e1 e2 ...)) #'sk #'fk)]
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)])
-			  #'(rule sk))]
+			  #'(rule sk fk))]
       [(name nm e)
-       (with-syntax ([p (peg-compile #'e #'sk^)])
+       (with-syntax ([p (peg-compile #'e #'sk^ #'fk)])
          #'(let ((sk^ (lambda (r)
                         (when (= 0 (unbox (pegvm-negation?)))
                           (set! nm (peg-result->object r)))
                         (sk r))))
              p))]
-;      [(transform e code)
-;       (with-syntax ([p (peg-compile #'e #'sk^)])
-;         #'(let ((sk^ (lambda (r)
-;                        (sk code))))
-;             p))]
       [(! e)
-       (with-syntax ([p (peg-compile #'e #'sk^)])
+       (with-syntax ([p (peg-compile #'e #'sk^ #'fk)])
          #'(let ((sk^ (lambda (_)
                         (pegvm-exit-negation!)
                         (pegvm-fail)))
@@ -218,18 +211,18 @@
              (pegvm-push-alternative! fk)
              p))]
       [(! e1 e2 ...)
-       (peg-compile #'(and (! e1) (! e2) ...) #'sk)]
+       (peg-compile #'(and (! e1) (! e2) ...) #'sk #'fk)]
       [(drop e)
-       (with-syntax ([p (peg-compile #'e #'sk^)])
+       (with-syntax ([p (peg-compile #'e #'sk^ #'fk)])
          #'(let ((sk^ (lambda (_) (sk empty-sequence))))
              p))]
       [(drop e1 e2 ...)
-       (peg-compile #'(drop (and e1 e2 ...)) #'sk)]
-      [(& e) (peg-compile #'(! (! e)) #'sk)]
+       (peg-compile #'(drop (and e1 e2 ...)) #'sk #'fk)]
+      [(& e) (peg-compile #'(! (! e)) #'sk #'fk)]
       [_ (let ((shorthand (syntax-e exp)))
-           (cond ((char? shorthand) (peg-compile #`(char #,exp) #'sk))
-                 ((string? shorthand) (peg-compile #`(string #,exp) #'sk))
-                 ((symbol? shorthand) (peg-compile #`(call #,exp) #'sk))
+           (cond ((char? shorthand) (peg-compile #`(char #,exp) #'sk #'fk))
+                 ((string? shorthand) (peg-compile #`(string #,exp) #'sk #'fk))
+                 ((symbol? shorthand) (peg-compile #`(call #,exp) #'sk #'fk))
                  (else (raise-syntax-error "invalid peg" (syntax->datum exp)))))])))
 
 (define-syntax (define-peg stx)
@@ -280,22 +273,6 @@
       (string-copy! res left-padding str (max 0 a) (min len b))
       res)))
 
-;(check-equal? (copy-and-pad-substring "abcdefghijklmnopqrstuvwxyz" -2 3)
-;              "  abc")
-;(check-equal? (copy-and-pad-substring "abcdefghijklmnopqrstuvwxyz" -1 3)
-;              " abc")
-;(check-equal? (copy-and-pad-substring "abcdefghijklmnopqrstuvwxyz" 0 3)
-;              "abc")
-;(check-equal? (copy-and-pad-substring "abcdefghijklmnopqrstuvwxyz" 1 3)
-;              "bc")
-;(check-equal? (copy-and-pad-substring "abcdefghijklmnopqrstuvwxyz" 2 3)
-;              "c")
-;(check-equal? (copy-and-pad-substring "abcdefghijklmnopqrstuvwxyz" 26 30)
-;              "    ")
-;(check-equal? (copy-and-pad-substring "abcdefghijklmnopqrstuvwxyz" 25 30)
-;              "z    ")
-;(check-equal? (copy-and-pad-substring "abcdefghijklmnopqrstuvwxyz" 24 30)
-;              "yz    ")
 
 (define-syntax (peg stx)
   (syntax-case stx ()
