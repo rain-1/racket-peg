@@ -114,7 +114,7 @@
   (define (single-char-pred sk fk x cond)
     (with-syntax ([sk sk] [fk fk] [x x] [cond cond])
       #'(if (pegvm-eof?)
-            (fk)
+            (pegvm-fail)
             (let ((x (pegvm-peek)))
               (if cond
                   (begin (pegvm-advance! 1)
@@ -136,20 +136,18 @@
          #'(if (string-contains-substring? (pegvm-input-text) (unbox (pegvm-input-position)) str)
                (begin (pegvm-advance! str-len)
                       (sk (peg-result str)))
-               (fk)))]
+               (pegvm-fail)))]
       [(and e1)
        (peg-compile #'e1 #'sk #'fk)]
       [(and e1 e2)
-       (with-syntax ([p1 (peg-compile #'e1 #'mk #'fmk)]
-                     [p2 (peg-compile #'e2 #'sk^ #'fk^)])
+       (with-syntax ([p1 (peg-compile #'e1 #'mk #'fk)]
+                     [p2 (peg-compile #'e2 #'sk^ #'fk)])
          #'(let ((stack-reset (unbox (pegvm-control-stack))))
              (let ((mk (lambda (r1)
                          (let ((sk^ (lambda (r2)
 						(sk (peg-result-join r1 r2)))))
                            (set-box! (pegvm-control-stack) stack-reset)
-                           p2)))
-			(fmk fk)
-			(fk^ fk))
+                           p2))))
               p1
 		)))]
       [(and e1 e2 e3 ...)
