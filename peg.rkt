@@ -59,6 +59,12 @@
 
 (struct control-frame (position label) #:transparent)
 
+(define (increment-parameter v)
+	(if v (add1 v) v))
+
+(define (decrement-parameter v)
+	(if v (sub1 v) v))
+
 (define (pegvm-eof?) (= (string-length (pegvm-input-text)) (unbox (pegvm-input-position))))
 (define (pegvm-peek) (string-ref (pegvm-input-text) (unbox (pegvm-input-position))))
 (define (pegvm-advance! n) (set-box! (pegvm-input-position) (+ (unbox (pegvm-input-position)) n)))
@@ -114,12 +120,12 @@
   (define (single-char-pred sk fk x cond)
     (with-syntax ([sk sk] [fk fk] [x x] [cond cond])
       #'(if (pegvm-eof?)
-            (pegvm-fail)
+            (fk)
             (let ((x (pegvm-peek)))
               (if cond
                   (begin (pegvm-advance! 1)
                          (sk (peg-result (char->string x))))
-                  (pegvm-fail))))))
+                  (fk))))))
   (with-syntax ([sk sk] [fk fk])
     (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop
                               $or)
@@ -136,44 +142,59 @@
          #'(if (string-contains-substring? (pegvm-input-text) (unbox (pegvm-input-position)) str)
                (begin (pegvm-advance! str-len)
                       (sk (peg-result str)))
-               (pegvm-fail)))]
+               (fk)))]
       [(and e1)
        (peg-compile #'e1 #'sk #'fk)]
       [(and e1 e2)
-       (with-syntax ([p1 (peg-compile #'e1 #'mk #'fk)]
-                     [p2 (peg-compile #'e2 #'sk^ #'fk)])
+       (with-syntax ([p1 (peg-compile #'e1 #'mk #'fk1)]
+                     [p2 (peg-compile #'e2 #'sk^ #'fk2)])
          #'(let ((stack-reset (unbox (pegvm-control-stack))))
-             (let ((mk (lambda (r1)
+             (let* ((mk (lambda (r1)
                          (let ((sk^ (lambda (r2)
-						(sk (peg-result-join r1 r2)))))
+						(sk (peg-result-join r1 r2))))
+				(fk2 (lambda ()
+					(parameterize ((pegvm-verbose (decrement-parameter (pegvm-verbose))))
+				(fk)))))
                            (set-box! (pegvm-control-stack) stack-reset)
+			(parameterize ((pegvm-verbose (decrement-parameter (pegvm-verbose))))
                            p2))))
-              p1
+		(fk1 (lambda ()
+			(parameterize ((pegvm-verbose (decrement-parameter (pegvm-verbose))))
+				(fk)))))
+	(parameterize ((pegvm-verbose (increment-parameter (pegvm-verbose))))
+              p1)
 		)))]
       [(and e1 e2 e3 ...)
        (peg-compile #'(and e1 (and e2 e3 ...)) #'sk #'fk)]
       [($or e1 e2)
-       (with-syntax ([p1 (peg-compile #'e1 #'sk #'fk)]
-                     [p2 (peg-compile #'e2 #'sk #'fk)])
-         #'(begin (pegvm-push-alternative! (lambda () p2))
-                  p1))]
+       (with-syntax ([p1 (peg-compile #'e1 #'sk #'fk1)]
+                     [p2 (peg-compile #'e2 #'sk #'fk1)])
+         #'(begin
+		(let ((fk1 (lambda () (parameterize ((pegvm-verbose (decrement-parameter (pegvm-verbose)))) (fk)))))
+
+			(pegvm-push-alternative! (lambda () p2))
+			(parameterize ((pegvm-verbose (increment-parameter (pegvm-verbose))))
+	                  p1))))]
       [(or e1)
        (peg-compile #'e1 #'sk #'fk)]
       [(or e1 e2)
-       (with-syntax ([p (peg-compile #'($or e1 e2) #'sk #'fk)])
-         #'(parameterize ([pegvm-current-choice '(or e1 e2)])
-             p))]
+       (with-syntax ([p (peg-compile #'($or e1 e2) #'sk #'fk1)])
+         #'(let ((fk1 (lambda () (parameterize ((pegvm-verbose (decrement-parameter (pegvm-verbose)))) (fk)))))
+		(parameterize ([pegvm-current-choice '(or e1 e2)] [pegvm-verbose (increment-parameter (pegvm-verbose))])
+             p)))]
       [(or e1 e2 e3 ...)
        (with-syntax ([p (peg-compile #'($or e1 (or e2 e3 ...)) #'sk #'fk)])
          #'(parameterize ([pegvm-current-choice '(or e1 e2 e3 ...)])
              p))]
       [(* e)
-       (with-syntax ([p (peg-compile #'e #'s+ #'fk)])
-         #'(letrec ((s* (lambda (res-acc)
+       (with-syntax ([p (peg-compile #'e #'s+ #'fk1)])
+         #'(letrec ((fk1 (lambda () (parameterize ((pegvm-verbose (decrement-parameter (pegvm-verbose)))) (fk))))
+			(s* (lambda (res-acc)
                           (pegvm-push-alternative! (lambda () (sk res-acc)))
                           (let ((s+ (lambda (res)
                                       (s* (peg-result-join res-acc res)))))
-                            p))))
+			(parameterize ((pegvm-verbose (increment-parameter (pegvm-verbose))))
+                            p)))))
              (s* empty-sequence)))]
       [(* e1 e2 ...)
        (peg-compile #'(* (and e1 e2 ...)) #'sk #'fk)]
@@ -182,9 +203,11 @@
       [(+ e1 e2 ...)
        (peg-compile #'(+ (and e1 e2 ...)) #'sk #'fk)]
       [(? e)
-       (with-syntax ([p (peg-compile #'e #'sk #'fk)])
+       (with-syntax ([p (peg-compile #'e #'sk #'fk1)])
          #'(begin (pegvm-push-alternative! (lambda () (sk empty-sequence)))
-                  p))]
+		(let ((fk1 (lambda () (parameterize ((pegvm-verbose (decrement-parameter (pegvm-verbose)))) (fk)))))
+		(parameterize ((pegvm-verbose (increment-parameter (pegvm-verbose))))
+                  p))))]
       [(? e1 e2 ...)
        (peg-compile #'(? (and e1 e2 ...)) #'sk #'fk)]
       [(call rule-name)
@@ -249,10 +272,11 @@
 				(if (pegvm-verbose)
 					(begin
 						(display (string-append "Fail on " 'name))
+						(newline)
 						(fk))
 					(fk)))))
-		
-			body)))))]))
+			(parameterize ((pegvm-verbose (increment-parameter (pegvm-verbose))))
+				body))))))]))
 
 (define-syntax (define-peg/drop stx)
   (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (drop exp))]))

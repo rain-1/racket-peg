@@ -9,14 +9,10 @@
 
 (define-peg exp (or (and number (drop "+") exp) number))
 
+(peg number "12" #t)
+
 (peg exp "12" #t)
 
 (peg exp "12+13" #t)
 
 (peg sum "12+13" #t)
-
-(check-equal?
-
-"peg-rule:local
-  peg-rule:number"
-	(with-output-to-string (peg number "12" #t)))
