@@ -46,7 +46,6 @@
 ;; pegvm registers and dynamic control
 
 
-(define pegvm-verbose (make-parameter #f))
 (define pegvm-input-text (make-parameter #f))      ;; The input string being parsed
 (define pegvm-input-position (make-parameter #f))  ;; The position inside the string
 (define pegvm-control-stack (make-parameter #f))   ;; For or control flow
@@ -189,10 +188,7 @@
        (peg-compile #'(? (and e1 e2 ...)) #'sk)]
       [(call rule-name)
        (with-syntax ([rule (format-id #'rule-name "peg-rule:~a" #'rule-name)])
-		    #'(if (pegvm-verbose)
-			  (parameterize ((pegvm-verbose (+ (pegvm-verbose) 1)))
-			    (rule sk))
-			  (rule sk)))]
+		    #'(rule sk))]
       [(name nm e)
        (with-syntax ([p (peg-compile #'e #'sk^)])
          #'(let ((sk^ (lambda (r)
@@ -245,10 +241,6 @@
                    [body (peg-compile #'exp #'sk^)]
                    [action (if (syntax-e #'has-action?) #'action #'res)])
        #'(define (name sk)
-	   (when (pegvm-verbose)
-	     (display (make-string (pegvm-verbose) #\space))
-	     (display 'name)
-	     (newline))
            (parameterize ([pegvm-current-rule 'name])
 	     (let* bindings
 	       (let ((sk^ (lambda (res) (sk action))))
@@ -311,8 +303,7 @@
                         [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
                         [pegvm-stashed-stacks (box '())]
                         [pegvm-negation? (box 0)]
-                        [pegvm-best-failure (box #f)]
-			[pegvm-verbose (if v 0 #f)])
+                        [pegvm-best-failure (box #f)])
 	   (peg-rule:local success-cont)))]))
 
 
