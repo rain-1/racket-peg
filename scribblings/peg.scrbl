@@ -103,8 +103,6 @@ word <- c:(non-space+ ~(' ' ?)) -> c ; //the ~ is drop
 //and rule <- exp -> action is equal to (define-peg rule exp action)
 //with this in a file, we can use the repl of drracket to do exactly the
 //uses of peg above.
-
-
 }
 
 
@@ -123,13 +121,13 @@ Here is a simple calculator example that demonstrates semantic actions and recur
   (if v2 (* v1 v2) v1))
 }
 
-this grammar in peg lang is equivalenty to :
+this grammar in peg lang is equivalent to:
 
 @codeblock{
-	#lang peg
-	number <- res:[0-9]+ -> (string->number res);
-	sum <- v1:prod ('+' v2:sum)? -> (if v2 (+ v1 v2) v1);
-	prod <- v1:number ('*' v2:prod)? -> (if v2 (* v1 v2) v1);
+#lang peg
+number <- res:[0-9]+ -> (string->number res);
+sum <- v1:prod ('+' v2:sum)? -> (if v2 (+ v1 v2) v1);
+prod <- v1:number ('*' v2:prod)? -> (if v2 (* v1 v2) v1);
 }
 
 Usage:
@@ -145,9 +143,12 @@ Usage:
 
 @subsection{Example 3}
 
-Here is an example of parsing balanced paranthesis. It demonstrates a common idiom of using @racket[_] for skipping whitespace, and using @racket{define-peg/bake} to produce a list rather than a sequence from a @racket[*].
+Here is an example of parsing balanced parenthesis. It demonstrates a common technique of using @racket[_] for skipping whitespace, and using @racket{define-peg/bake} to produce a list rather than a sequence from a @racket[*].
 
 @codeblock{
+#lang racket
+(require peg)
+
 (define-peg/drop _ (* (or #\space #\newline)))
 
 (define-peg symbol
@@ -157,6 +158,16 @@ Here is an example of parsing balanced paranthesis. It demonstrates a common idi
 (define-peg/bake sexp
   (or symbol
       (and (drop #\() (* sexp) (drop #\) _))))
+}
+
+or in PEG syntax:
+
+@codeblock{
+#lang peg
+_ < [ \n]*;
+symbol <- res:(![() \n] .)+ _ -> (string->symbol res);
+sexp <- s:symbol / ~'(' s:sexp* ~')' _ -> s;
+// had to use s: -> s because there is no way to express bake from the PEG language
 }
 
 Usage:
@@ -178,12 +189,12 @@ This package also provides a @racket{#lang peg} alternative, to allow you to mak
 
 The best way to understand the PEG syntax would be by reference to examples, there are many simple examples in the racket peg repo and the follow is the actual grammar used by racket-peg to implemet the peg lang:
 
-Note: When you match the empty string in peg lang, you match a empty list, not a empty string, be carefull.
+Note: When you match the empty string in peg lang, the result object is the empty sequence, not the empty string, be careful.
 
 @verbatim{
 #lang peg
 
-import s-exp.rkt;
+(require "s-exp.rkt");
 
 _ < ([ \t\n] / '//' [^\n]*)*;
 SLASH < '/' _;
@@ -206,5 +217,5 @@ cc-char <- !cc-escape-char . / 'n' / 't';
 cc-escape-char <- '[' / ']' / '-' / '^' / '\\' / 'n' / 't';
 
 peg <-- _ import* rule+;
-import <-- 'import' _ name ';' _;
+import <-- s-exp _ ';' _;
 }
