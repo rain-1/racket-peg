@@ -6,7 +6,7 @@
     (define-peg/drop _ (* (or (or #\space #\tab #\newline) (and "//" (* (and (! #\newline) (any-char)))))))
     (define-peg/drop SLASH (and "/" _))
     (define-peg/tag name (and (or (range #\a #\z) (range #\A #\Z) #\_) (* (or (range #\a #\z) (range #\A #\Z) (range #\0 #\9) #\- #\_ #\.)) _))
-    (define-peg/tag rule (and name (or "<--" "<-" "<") _ pattern (? (and "->" _ s-exp _)) ";" _))
+    (define-peg/tag rule (and name (or "<---" "<--" "<-" "<") _ pattern (? (and "->" _ s-exp _)) ";" _))
     (define-peg/tag pattern (and alternative (* (and SLASH alternative))))
     (define-peg/tag alternative (+ expression))
     (define-peg/tag expression (and (? (and name (drop ":") _)) (? (and (or #\! #\& #\~) _)) primary (? (and (or #\* #\+ #\?) _))))

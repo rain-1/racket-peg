@@ -36,6 +36,7 @@
       (("<") 'define-peg/drop)
       (("<-") 'define-peg)
       (("<--") 'define-peg/tag)
+      (("<---") 'define-peg/bake)
       (else (error 'peg->scheme:grammar "~s" op))))
   (match p
     (`(import ,s-exp ";")
