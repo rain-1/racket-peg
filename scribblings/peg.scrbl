@@ -32,7 +32,7 @@ The generated code parses text by interacting with the "PEG VM", which is a set 
      	      (code:line (+ <rule> ...) (code:comment "one or more"))
      	      (code:line (? <rule> ...) (code:comment "zero or one"))
      	      (code:line (call name))
-     	      (code:line (capture name <rule>))
+     	      (code:line (name nm <rule>))
      	      (code:line (! <rule> ...) (code:comment "negative lookahead"))
 	      (code:line (& <rule>) (code:comment "positive lookahead"))
      	      (code:line (drop <rule> ...) (code:comment "discard the semantic result on matching"))
