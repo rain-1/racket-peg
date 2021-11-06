@@ -12,12 +12,6 @@
 ;;;;
 ;; generic utility functions
 
-(define (char->string ch) (list->string (list ch)))
-(define (string-contains-char? str ch) (string-contains? str (char->string ch)))
-(define (string-contains-substring? str place contained)
-  (and (>= (string-length str) (+ place (string-length contained)))
-       (string=? (substring str place (+ place (string-length contained)))
-                 contained)))
 (define (char-between? x c1 c2)
   (and (<= (char->integer c1) (char->integer x))
        (<= (char->integer x) (char->integer c2))))
@@ -46,8 +40,8 @@
 ;; pegvm registers and dynamic control
 
 
-(define pegvm-input-text (make-parameter #f))      ;; The input string being parsed
-(define pegvm-input-position (make-parameter #f))  ;; The position inside the string
+(define pegvm-input-port (make-parameter #f))      ;; The input port being parsed
+(define pegvm-input-position (make-parameter #f))  ;; The offset in bytes from the starting position
 (define pegvm-control-stack (make-parameter #f))   ;; For or control flow
 (define pegvm-stashed-stacks (make-parameter #f))  ;; For negation control flow
 (define pegvm-negation? (make-parameter #f))       ;; How many negations have we entered
@@ -58,8 +52,6 @@
 
 (struct control-frame (position label) #:transparent)
 
-(define (pegvm-eof?) (= (string-length (pegvm-input-text)) (unbox (pegvm-input-position))))
-(define (pegvm-peek) (string-ref (pegvm-input-text) (unbox (pegvm-input-position))))
 (define (pegvm-advance! n) (set-box! (pegvm-input-position) (+ (unbox (pegvm-input-position)) n)))
 (define (pegvm-push-alternative! alt) (push! (pegvm-control-stack) (control-frame (unbox (pegvm-input-position)) alt)))
 (define (pegvm-fail)
@@ -82,9 +74,14 @@
     (let ((pos (unbox (pegvm-input-position))))
       (set-box! (pegvm-best-failure) (list pos (pegvm-current-rule) (pegvm-current-choice))))))
 
-(define (calculate-line-and-column str pos)
-  (let ((line 1)
-	(col 0))
+(define (calculate-line-and-column in pos)
+  (define-values (start-line start-col start-pos)
+    (port-next-location in))
+  (define str
+    (bytes->string/utf-8
+     (peek-bytes pos 0 in)))
+  (let ((line (or start-line 1))
+	(col (or start-col 0)))
     (for ((chr (in-string str 0 pos)))
 	 (if (equal? chr #\newline)
 	     (begin (set! line (+ line 1))
@@ -111,13 +108,11 @@
 (define-for-syntax (peg-compile exp sk)
   (define (single-char-pred sk x cond)
     (with-syntax ([sk sk] [x x] [cond cond])
-      #'(if (pegvm-eof?)
-            (pegvm-fail)
-            (let ((x (pegvm-peek)))
-              (if cond
-                  (begin (pegvm-advance! 1)
-                         (sk (peg-result (char->string x))))
-                  (pegvm-fail))))))
+      #'(let ((x (peek-char (pegvm-input-port) (unbox (pegvm-input-position)))))
+          (if (or (eof-object? x) (not cond))
+              (pegvm-fail)
+              (begin (pegvm-advance! (char-utf-8-length x))
+                     (sk (peg-result (string x))))))))
   (with-syntax ([sk sk])
     (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop
                               $or)
@@ -131,10 +126,11 @@
        (single-char-pred #'sk #'x #'(char-between? x c1 c2))]
       [(string str)
        (with-syntax ([str-len (string-length (syntax->datum #'str))])
-         #'(if (string-contains-substring? (pegvm-input-text) (unbox (pegvm-input-position)) str)
-               (begin (pegvm-advance! str-len)
-                      (sk (peg-result str)))
-               (pegvm-fail)))]
+         #'(let ((x (peek-string str-len (unbox (pegvm-input-position)) (pegvm-input-port))))
+             (if (or (eof-object? x) (not (string=? str x)))
+                 (pegvm-fail)
+                 (begin (pegvm-advance! (string-utf-8-length str))
+                        (sk (peg-result str))))))]
       [(and e1)
        (peg-compile #'e1 #'sk)]
       [(and e1 e2)
@@ -255,6 +251,17 @@
 (define-syntax (define-peg/tag stx)
   (syntax-case stx () [(_ rule-name exp) #'(define-peg rule-name (name res exp) (cons 'rule-name res))]))
 
+(define (copy-and-pad-substring/port in pos left right)
+  (define before
+    (bytes->string/utf-8
+     (peek-bytes pos 0 in)))
+  (define after
+    (let ((str (peek-string right pos in)))
+      (if (eof-object? str) "" str)))
+  (let ((pos^ (string-length before))
+        (str (string-append before after)))
+    (copy-and-pad-substring str (- pos^ left) (+ pos^ right))))
+
 (define (copy-and-pad-substring str a b)
   ;; pad with spaces
   (let ((res (make-string (- b a) #\space))
@@ -282,28 +289,37 @@
 
 (define-syntax (peg stx)
   (syntax-case stx ()
-    [(_ exp str) #'(peg exp str #f)]
-    [(_ exp str v)
+    [(_ exp src) #'(peg exp src #f)]
+    [(_ exp src v)
      #'(let ((fail-cont (lambda ()
                           (let ((loc (car (unbox (pegvm-best-failure)))))
-                            (display (string-replace (string-replace (copy-and-pad-substring (pegvm-input-text) (- loc 10) (+ loc 10))
+                            (display (string-replace (string-replace (copy-and-pad-substring/port (pegvm-input-port) loc 10 10)
                                                                      "\n" "N") "\t" "T"))
                             (newline)
                             (display "          ^ here")
                             (newline))
                           (error 'peg "parse failed in rule ~a at location ~a with options ~v"
                                  (cadr (unbox (pegvm-best-failure)))
-				 (calculate-line-and-column (pegvm-input-text) (car (unbox (pegvm-best-failure))))
+				 (calculate-line-and-column (pegvm-input-port) (car (unbox (pegvm-best-failure))))
                                  (caddr (unbox (pegvm-best-failure)))
                                  )))
              (success-cont peg-result->object))
          (define-peg local exp)
-         (parameterize ([pegvm-input-text str]
+         (define in
+           (let ((src-v src))
+             (cond
+               [(string? src-v) (open-input-string src-v)]
+               [(port? src-v) src-v])))
+         (parameterize ([pegvm-input-port in]
                         [pegvm-input-position (box 0)]
                         [pegvm-control-stack (box (list (control-frame #f fail-cont)))]
                         [pegvm-stashed-stacks (box '())]
                         [pegvm-negation? (box 0)]
                         [pegvm-best-failure (box #f)])
-	   (peg-rule:local success-cont)))]))
+          (begin0 (peg-rule:local success-cont)
+                  (port-commit-peeked (unbox (pegvm-input-position))
+                                      (port-progress-evt in)
+                                      always-evt
+                                      in))))]))
 
 

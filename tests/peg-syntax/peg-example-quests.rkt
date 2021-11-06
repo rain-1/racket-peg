@@ -6,7 +6,7 @@
 (provide (all-from-out "peg-example-shell.rkt"));
 
 (define (parser-quest port)
-  (peg top-quest (port->string port)));
+  (peg top-quest port));
 
 (struct quest (name command preRequisites) #:transparent);
 
