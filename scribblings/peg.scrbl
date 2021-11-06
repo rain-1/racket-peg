@@ -1,6 +1,7 @@
 #lang scribble/manual
 @require[@for-label[peg
-                    racket/base]
+                    racket/base
+                    racket/contract/base]
          scribble/bnf]
 
 @title{PEG}
@@ -66,8 +67,11 @@ tags the result with the peg rule name. Useful for parsers that create an AST.
 
 @subsection{peg}
 
-@defform[#:link-target? #f (peg rule input-text)]{
-Run a PEG parser. Attempt to parse the @racket[input-text] string using the given @racket[rule]. This is sets up the PEG VM registers into an initial state and then calls into the parser for @racket[rule].
+@defform[#:link-target? #f (peg rule input)
+  #:contracts ([input (or/c string? input-port?)])]{
+Runs a PEG parser and attempts to parse @racket[input] using the given @racket[rule]. This sets up the PEG VM registers into an initial state and then calls into the parser for @racket[rule].
+
+If @racket[input] is a port, and @racket[(port-counts-lines? input)] returns @racket[#t], then parse errors will be reported at the actual position in the file. Otherwise, reported locations are relative to the point at which parsing started.
 }
 
 @section{Examples}

@@ -15,7 +15,7 @@
 
 (define (peg-port->scheme in)
   (peg->scheme (car
-                  (peg-result->object (peg (and peg (! (any-char))) (port->string in))))))
+                  (peg-result->object (peg (and peg (! (any-char))) in)))))
 
 (define (literal-read in)
   (syntax->datum
