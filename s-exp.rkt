@@ -20,7 +20,7 @@
     (define-peg dotdotdot "..." '...)
     (define-peg keyword (and "#:" (name s identifier)) (symbol->keyword s))
     (define-peg number floating-point)
-    (define-peg string (and #\" (name s (* (or (and (! (or #\" #\\)) (any-char)) escaped-char))) #\") s)
+    (define-peg string (and #\" (name s (* (or (and (! (or #\" #\\)) (any-char)) escaped-char))) #\") (if (null? s) "" s))
     (define-peg escaped-char (or escaped-newline escaped-tab (and (drop #\\) (any-char))))
     (define-peg escaped-newline (and #\\ "n") (peg-result "\n"))
     (define-peg escaped-tab (and #\\ "t") (peg-result "\t"))
