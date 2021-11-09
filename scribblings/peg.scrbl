@@ -1,8 +1,8 @@
 #lang scribble/manual
-@require[@for-label[peg
-                    racket/base
-                    racket/contract/base]
-         scribble/bnf]
+@(require (for-label peg
+                     racket/base
+                     racket/contract/base)
+          scribble/bnf)
 
 @title{PEG}
 
@@ -12,15 +12,18 @@ This library implements a PEG parser generator.
 
 PEG can be thought of as an advance over regex. It can match more languages (for example balanced brackets) and can be paired with semantic actions to produce structured results from a parse.
 
-The PEG language is implemented as a system of macros that compiles parser descriptions (rules) into scheme code. It is also provided with a custom syntax via @racket{#lang peg}.
+The PEG language is implemented as a system of macros that compiles parser descriptions (rules) into scheme code. It is also provided with a custom syntax via @racketmodfont{#lang peg}.
 
 The generated code parses text by interacting with the "PEG VM", which is a set of registers holding the input text, input position, control stack for backtracking and error reporting notes.
 
 @section{Syntax Reference}
 
+@defmodule[peg]
+
 @subsection{define-peg}
 
-@defform[#:link-target? #f (define-peg name rule)
+@defform*[((define-peg name rule)
+           (define-peg name rule action))
   #:grammar ([<rule>
               (code:line (epsilon) (code:comment "always succeeds"))
 	      (code:line (char c) (code:comment "matches the character c"))
@@ -39,27 +42,25 @@ The generated code parses text by interacting with the "PEG VM", which is a set 
      	      (code:line (drop <rule> ...) (code:comment "discard the semantic result on matching"))
 	      ])]{
 Defines a new scheme function named @racket[peg-rule:name] by compiling the peg rule into scheme code that interacts with the PEG VM.
-}
 
-@defform[#:link-target? #f (define-peg name rule action)]{
-Same as above, but also performs a semantic action to produce its result. Semantic actions are regular scheme expressions, they can refer to variables named by a @racket[capture].
+If @racket[action] is supplied, it defines a semantic action to produce the result of the rule. Semantic actions are regular scheme expressions, they can refer to variables named by a @racket[capture].
 }
 
 We also provide shorthands for some common semantic actions:
 
-@defform[#:link-target? #f (define-peg/drop name rule)]{
+@defform[(define-peg/drop name rule)]{
 @code{= (define-peg rule-name (drop rule))}
 
 makes the parser produce no result.
 }
 
-@defform[#:link-target? #f (define-peg/bake name rule)]{
+@defform[(define-peg/bake name rule)]{
 @code{= (define-peg rule-name (name res rule) res)}
 
 transforms the peg-result into a scheme object.
 }
 
-@defform[#:link-target? #f (define-peg/tag name rule)]{
+@defform[(define-peg/tag name rule)]{
 @code{= (define-peg rule-name (name res exp) `(rule-name . ,res))}
 
 tags the result with the peg rule name. Useful for parsers that create an AST.
@@ -67,7 +68,7 @@ tags the result with the peg rule name. Useful for parsers that create an AST.
 
 @subsection{peg}
 
-@defform[#:link-target? #f (peg rule input)
+@defform[(peg rule input)
   #:contracts ([input (or/c string? input-port?)])]{
 Runs a PEG parser and attempts to parse @racket[input] using the given @racket[rule]. This sets up the PEG VM registers into an initial state and then calls into the parser for @racket[rule].
 
@@ -147,7 +148,7 @@ Usage:
 
 @subsection{Example 3}
 
-Here is an example of parsing balanced parenthesis. It demonstrates a common technique of using @racket[_] for skipping whitespace, and using @racket{define-peg/bake} to produce a list rather than a sequence from a @racket[*].
+Here is an example of parsing balanced parenthesis. It demonstrates a common technique of using @racket[_] for skipping whitespace, and using @racket[define-peg/bake] to produce a list rather than a sequence from a @racket[*].
 
 @codeblock{
 #lang racket
@@ -187,7 +188,7 @@ Usage:
 
 @section{PEG Syntax}
 
-This package also provides a @racket{#lang peg} alternative, to allow you to make parsers in a more standard PEG syntax.
+This package also provides a @racketmodfont{#lang peg} alternative, to allow you to make parsers in a more standard PEG syntax.
 
 @subsection{PEG Syntax Reference}
 
