@@ -4,7 +4,7 @@
          define-peg/bake define-peg/drop define-peg/tag
          peg)
 
-(require (for-syntax racket/syntax))
+(require (for-syntax racket/syntax syntax/parse))
 (require racket/trace)
 (require "push-pop-boxes.rkt")
 (require "peg-result.rkt")
@@ -93,7 +93,8 @@
 ;; peg compiler
 
 (define-for-syntax (peg-names exp)
-  (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop)
+  (syntax-parse exp
+    #:datum-literals (epsilon char any-char range string and or * + ? call name ! drop)
     [(and e1) (peg-names #'e1)]
     [(and e1 e2) (append (peg-names #'e1) (peg-names #'e2))]
     [(and e1 e2 . e3) (append (peg-names #'e1) (peg-names #'(and e2 . e3)))]
@@ -114,8 +115,8 @@
               (begin (pegvm-advance! (char-utf-8-length x))
                      (sk (peg-result (string x))))))))
   (with-syntax ([sk sk])
-    (syntax-case exp (epsilon char any-char range string and or * + ? call name ! drop
-                              $or)
+    (syntax-parse exp
+      #:datum-literals (epsilon char any-char range string and or * + ? call name ! drop $or)
       [(epsilon)
        #'(sk empty-sequence)]
       [(char c)
